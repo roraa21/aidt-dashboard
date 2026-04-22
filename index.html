@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>비상 AIDT 프로모션 운영 현황</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+:root{
+  --bg:#F0F2F8;--surface:#fff;--surface2:#F1F5F9;--border:#E2E8F0;--border2:#CBD5E1;
+  --text1:#0F172A;--text2:#475569;--text3:#94A3B8;
+  --accent:#6366F1;--accent-bg:#EEF2FF;
+  --green:#10B981;--green-bg:#ECFDF5;--amber:#F59E0B;--amber-bg:#FFFBEB;
+  --blue:#0EA5E9;--blue-bg:#F0F9FF;--red:#F87171;
+  --sidebar:#0F172A;--r-sm:8px;--r-md:12px;--r-lg:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text1);min-height:100vh;display:flex;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.sidebar{width:210px;min-height:100vh;background:var(--sidebar);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh}
+.sidebar-logo{padding:22px 18px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sidebar-logo p{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.06em;margin-bottom:5px}
+.sidebar-logo h2{font-size:13px;font-weight:700;color:#fff;line-height:1.4;letter-spacing:-.02em;word-break:keep-all}
+.nav{flex:1;padding:10px 8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;color:rgba(255,255,255,.38);font-size:12px;font-weight:500;border-radius:var(--r-sm);margin-bottom:2px;transition:all .15s}
+.nav-item:hover{color:rgba(255,255,255,.75);background:rgba(255,255,255,.06)}
+.nav-item.active{color:#A5B4FC;background:rgba(99,102,241,.18)}
+.nav-item svg{flex-shrink:0;opacity:.5}.nav-item.active svg{opacity:1}
+.sidebar-bottom{padding:12px 8px;border-top:1px solid rgba(255,255,255,.06)}
+.date-label{font-size:10px;color:rgba(255,255,255,.2);margin-bottom:8px;padding:0 5px}
+.edit-btn{width:100%;font-size:12px;padding:8px 12px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);cursor:pointer;font-weight:500;color:rgba(255,255,255,.4);transition:all .15s;text-align:left;display:flex;align-items:center;gap:7px;font-family:inherit}
+.edit-btn:hover{border-color:rgba(99,102,241,.5);color:#A5B4FC;background:rgba(99,102,241,.15)}
+.edit-btn.active{background:rgba(99,102,241,.25);border-color:rgba(99,102,241,.5);color:#A5B4FC}
+.main{flex:1;min-width:0;padding:28px 32px;overflow-y:auto;overflow-x:hidden}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:26px}
+.page-header h1{font-size:18px;font-weight:700;letter-spacing:-.03em;color:var(--text1);word-break:keep-all;line-height:1.4}
+.page-header p{font-size:12px;color:var(--text3);margin-top:4px}
+.tabs{display:flex;flex-direction:column;gap:0;margin-bottom:20px}
+.tab{font-size:12px;font-weight:500;padding:6px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text2);transition:all .15s;font-family:inherit;white-space:nowrap}
+.tab:hover{border-color:var(--accent);color:var(--accent)}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.edit-panel{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 24px;margin-bottom:24px;display:none;box-shadow:var(--shadow)}
+.edit-panel.show{display:block}
+.edit-panel-title{font-size:13px;font-weight:700;color:var(--text1);margin-bottom:14px}
+.edit-section-label{font-size:10px;font-weight:700;color:var(--text3);margin-bottom:8px;margin-top:18px;letter-spacing:.06em;text-transform:uppercase}
+.edit-scroll{overflow-x:auto}
+table.edit-tbl{width:100%;border-collapse:collapse;font-size:11px;min-width:600px}
+table.edit-tbl th{background:var(--surface2);color:var(--text2);font-weight:600;padding:7px 10px;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap;font-size:10px}
+table.edit-tbl td{padding:6px 5px;border-bottom:1px solid var(--border);text-align:center;color:var(--text1)}
+table.edit-tbl td:first-child{text-align:left;font-weight:600;padding-left:10px;white-space:nowrap}
+table.edit-tbl input[type="number"],table.edit-tbl input[type="text"]{width:60px;border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;text-align:center;color:var(--text1);background:var(--surface2);font-family:inherit}
+table.edit-tbl input[type="text"].wide{width:110px}
+table.edit-tbl input[type="text"].wider{width:180px}
+table.edit-tbl input[type="color"]{width:36px;height:24px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px}
+table.edit-tbl input:focus{outline:none;border-color:var(--accent);background:#fff}
+.apply-btn{margin-top:14px;font-size:12px;font-weight:700;padding:8px 20px;border-radius:var(--r-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.apply-btn:hover{opacity:.85}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border-radius:var(--r-md);padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow);transition:box-shadow .2s,transform .2s}
+.kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-label{font-size:11px;color:var(--text3);margin-bottom:7px;font-weight:500}
+.kpi-val{font-size:24px;font-weight:700;letter-spacing:-.04em;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.chart-card{background:var(--surface);border-radius:var(--r-md);padding:20px 22px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.chart-title{font-size:13px;font-weight:700;color:var(--text1);margin-bottom:2px}
+.chart-sub{font-size:11px;color:var(--text3);margin-bottom:14px}
+.legend{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.prog-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.prog-name{font-size:12px;color:var(--text2);min-width:120px;line-height:1.3;font-weight:500}
+.prog-bars{flex:1}
+.prog-wrap{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.prog-track{flex:1;background:var(--surface2);border-radius:99px;height:6px;overflow:hidden}
+.prog-fill{height:6px;border-radius:99px;transition:width .5s}
+.prog-pct{font-size:11px;font-weight:700;color:var(--text1);min-width:30px;text-align:right}
+.prog-tag{font-size:10px;color:var(--text3);min-width:24px}
+.status-table-wrap{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow)}
+.status-table-head{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700}
+table.status-tbl{width:100%;border-collapse:collapse;font-size:12px}
+table.status-tbl th{background:var(--surface2);color:var(--text3);font-weight:600;padding:9px 16px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+table.status-tbl td{padding:11px 16px;border-bottom:1px solid var(--border);color:var(--text1)}
+table.status-tbl tr:last-child td{border-bottom:none}
+table.status-tbl tr:hover td{background:var(--surface2)}
+.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-blue{background:var(--blue-bg);color:var(--blue)}
+.badge-amber{background:var(--amber-bg);color:var(--amber)}
+.pct-bar-wrap{display:flex;align-items:center;gap:8px}
+.pct-bar-track{width:64px;background:var(--surface2);border-radius:99px;height:5px;overflow:hidden;flex-shrink:0}
+.pct-bar-fill{height:5px;border-radius:99px}
+.section-label{font-size:11px;font-weight:700;color:var(--text3);margin-bottom:12px;letter-spacing:.07em;text-transform:uppercase}
+.promo-type-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;margin-bottom:28px}
+.promo-type-card{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:18px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.process-box{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:22px 24px;margin-bottom:10px;box-shadow:var(--shadow)}
+.timeline-header{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr 28px 1fr;align-items:center;margin-bottom:20px}
+.phase-block{border-radius:var(--r-sm);padding:12px 14px;text-align:center}
+.phase-num{font-size:9px;font-weight:700;margin-bottom:3px;letter-spacing:.06em;text-transform:uppercase;opacity:.7}
+.phase-name{font-size:13px;font-weight:700;letter-spacing:-.02em}
+.phase-arrow{text-align:center;color:var(--border2);font-size:18px;line-height:1}
+.timeline-body{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr 28px 1fr;align-items:start}
+.tl-items{display:flex;flex-direction:column;gap:6px}
+.tl-item{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border-radius:var(--r-sm)}
+.tl-dot-wrap{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.tl-dot{width:6px;height:6px;border-radius:50%}
+.tl-label{font-size:12px;font-weight:700;color:var(--text1);margin-bottom:1px}
+.tl-desc{font-size:11px;color:var(--text2);line-height:1.5}
+.tl-tag{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:var(--r-sm);margin-top:2px}
+.tl-tag-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.tl-tag-text{font-size:10px;font-weight:700;letter-spacing:.02em}
+.search-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-input{flex:1;min-width:200px;padding:9px 16px;border-radius:99px;border:1.5px solid var(--border);font-size:13px;font-family:inherit;background:var(--surface);color:var(--text1);outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--accent)}
+.search-select{padding:9px 16px;border-radius:99px;border:1.5px solid var(--border);font-size:12px;font-family:inherit;background:var(--surface);color:var(--text2);outline:none;cursor:pointer;min-width:150px}
+.summary-chips{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.summary-chip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 18px;font-size:12px;box-shadow:var(--shadow)}
+@media(max-width:900px){
+  .sidebar{width:54px}.sidebar-logo h2,.sidebar-logo p,.nav-item span,.date-label{display:none}
+  .nav-item{padding:10px;justify-content:center}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .charts-row,.promo-type-grid{grid-template-columns:1fr}
+  .timeline-header,.timeline-body{grid-template-columns:1fr}
+  .phase-arrow{display:none}.main{padding:20px 16px}
+}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <p>비상교육</p>
+    <h2>AIDT 프로모션<br>운영 현황</h2>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="goPage('process')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+      <span>운영 프로세스</span>
+    </div>
+    <div class="nav-item" onclick="goPage('apply')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+      <span>신청 현황</span>
+    </div>
+    <div class="nav-item" onclick="goPage('usage')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13V7l6-5 6 5v6"/><rect x="5" y="9" width="3" height="4"/><rect x="8" y="7" width="3" height="6"/></svg>
+      <span>사용 현황</span>
+    </div>
+    <div class="nav-item" onclick="goPage('mission')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8l3 3 5-5"/><circle cx="8" cy="8" r="6.5"/></svg>
+      <span>마케팅 미션 현황</span>
+    </div>
+    <div class="nav-item" onclick="goPage('schools')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13V7l6-5 6 5v6"/><path d="M6 13v-4h4v4"/></svg>
+      <span>신청 학교 리스트</span>
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="date-label" id="updated-date">업데이트 주기: 매일</div>
+    <button class="edit-btn" id="editToggle" onclick="toggleEdit()">데이터 수정</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="edit-panel" id="editPanel">
+    <div class="edit-panel-title">비밀번호 확인 후 수정 가능합니다</div>
+    <div class="edit-section-label">프로모션 유형 정보</div>
+    <div class="edit-scroll"><table class="edit-tbl"><thead><tr><th>색상</th><th>태그</th><th>이름</th><th>설명</th></tr></thead><tbody id="promoTypeBody"></tbody></table></div>
+    <hr class="divider">
+    <div class="edit-section-label">운영 지표 데이터</div>
+    <div class="edit-scroll"><table class="edit-tbl"><thead><tr><th>기수명</th><th>운영기간</th><th>신청</th><th>실참여</th><th>취소</th><th>학생</th><th>중간%</th><th>최종%</th><th>초등수학</th><th>초등영어</th><th>중학수학</th><th>중학영어</th><th>중학정보</th><th>고등수학</th><th>고등영어</th><th>고등정보</th><th>초등%</th><th>중학%</th><th>고등%</th></tr></thead><tbody id="dataBody"></tbody></table></div>
+    <button class="apply-btn" onclick="applyEdit()">적용</button>
+  </div>
+
+  <!-- 운영 프로세스 -->
+  <div class="page active" id="page-process">
+    <div class="page-header"><h1>2026 AI 디지털 교육자료 무료체험 운영 프로세스</h1></div>
+    <div class="section-label">프로모션 유형</div>
+    <div class="promo-type-grid" id="promoTypeGrid"></div>
+    <div class="section-label">3개월 무료체험 프로세스 상세</div>
+    <div class="process-box" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div style="background:#DEEAF1;color:#1F4E79;font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px">STEP 1</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text1)">이용 방법 (KERIS 포털 이용)</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="tl-item" style="background:#f4f8fc;border-left:3px solid #DEEAF1"><div class="tl-dot-wrap" style="background:#DEEAF1"><div class="tl-dot" style="background:#1F4E79"></div></div><div><div class="tl-label">플랜 A — KERIS 포털 시스템 등록</div><div class="tl-desc">체험단 이용 시 AI·디지털 교육자료 포털 시스템 등록<br><a href="https://www.aidtbook.kr/index.do" target="_blank" style="color:#1F4E79;font-size:10px">www.aidtbook.kr</a></div></div></div>
+        <div class="tl-item" style="background:#f4f8fc;border-left:3px solid #DEEAF1"><div class="tl-dot-wrap" style="background:#DEEAF1"><div class="tl-dot" style="background:#1F4E79"></div></div><div><div class="tl-label">플랜 B — 내부 운영서버</div><div class="tl-desc">나이스 연동 이슈 발생 시 내부 운영서버 계정 발급 진행</div></div></div>
+      </div>
+    </div>
+    <div class="process-box" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div style="background:#E2EFDA;color:#375623;font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px">STEP 2</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text1)">프로모션 대상자 선정</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="tl-item" style="background:#f4fcf7;border-left:3px solid #E2EFDA"><div class="tl-dot-wrap" style="background:#E2EFDA"><div class="tl-dot" style="background:#375623"></div></div><div><div class="tl-label">1. 무료체험 미 이용 학교</div></div></div>
+        <div class="tl-item" style="background:#f4fcf7;border-left:3px solid #E2EFDA"><div class="tl-dot-wrap" style="background:#E2EFDA"><div class="tl-dot" style="background:#375623"></div></div><div><div class="tl-label">2. AIDT 미계약 학교</div></div></div>
+        <div class="tl-item" style="background:#f4fcf7;border-left:3px solid #E2EFDA"><div class="tl-dot-wrap" style="background:#E2EFDA"><div class="tl-dot" style="background:#375623"></div></div><div><div class="tl-label">3. AI 중점학교 / AI·디지털활용 선도학교</div></div></div>
+        <div class="tl-item" style="background:#f4fcf7;border-left:3px solid #E2EFDA"><div class="tl-dot-wrap" style="background:#E2EFDA"><div class="tl-dot" style="background:#375623"></div></div><div><div class="tl-label">4. 무료체험 희망자</div></div></div>
+      </div>
+    </div>
+    <div class="process-box" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div style="background:#FFF2CC;color:#7F6000;font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px">STEP 3</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text1)">무료체험 온보딩 프로그램 제공</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="tl-item" style="background:#fdfcf0;border-left:3px solid #FFF2CC"><div class="tl-dot-wrap" style="background:#FFF2CC"><div class="tl-dot" style="background:#7F6000"></div></div><div><div class="tl-label">1. 해피콜 진행</div><div class="tl-desc">무료체험 신청 후 해피콜 진행 (학운위 심의 여부 필수 확인)</div></div></div>
+        <div class="tl-item" style="background:#fdfcf0;border-left:3px solid #FFF2CC"><div class="tl-dot-wrap" style="background:#FFF2CC"><div class="tl-dot" style="background:#7F6000"></div></div><div><div class="tl-label">2. 첫걸음 가이드 소개</div><div class="tl-desc">원패스 가입 등 첫걸음 가이드 소개 (메일 안내)</div></div></div>
+        <div class="tl-item" style="background:#fdfcf0;border-left:3px solid #FFF2CC"><div class="tl-dot-wrap" style="background:#FFF2CC"><div class="tl-dot" style="background:#7F6000"></div></div><div><div class="tl-label">3. 웰컴패키지 제공</div><div class="tl-desc">웰컴패키지 제공 (택배 발송)</div></div></div>
+        <div class="tl-item" style="background:#fdfcf0;border-left:3px solid #FFF2CC"><div class="tl-dot-wrap" style="background:#FFF2CC"><div class="tl-dot" style="background:#7F6000"></div></div><div><div class="tl-label">4. 웨비나 신청 안내</div><div class="tl-desc">웨비나 진행 시 신청 안내 SMS 발송</div></div></div>
+      </div>
+    </div>
+    <div class="section-label" style="margin-top:8px">조직별 R&amp;R</div>
+    <div class="process-box" style="margin-bottom:12px;border-left:4px solid #6366F1">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="tl-item" style="background:#F5F3FF;border-left:3px solid #C7D2FE;align-items:flex-start"><div class="tl-dot-wrap" style="background:#EEF2FF;margin-top:2px"><div class="tl-dot" style="background:#6366F1"></div></div><div><div class="tl-label">플랫폼마케팅 Cell</div><div class="tl-desc" style="line-height:1.7">· 프로모션 전체 일정 관리 및 성과 지표 분석<br>· 해피콜 수행<br>· KERIS 계정 세팅<br>· 운영 관련 CS 상시 대응<br>· 온보딩 및 이용 매뉴얼 배포<br>· 중간 점검 미션 안내</div></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="tl-item" style="background:#F5F3FF;border-left:3px solid #C7D2FE;align-items:flex-start"><div class="tl-dot-wrap" style="background:#EEF2FF;margin-top:2px"><div class="tl-dot" style="background:#6366F1"></div></div><div><div class="tl-label">콘텐츠서비스3 Cell</div><div class="tl-desc" style="line-height:1.7">· 온보딩 웨비나 및 맞춤 컨설팅 교육<br>· 온보딩 콘텐츠 제작</div></div></div>
+          <div class="tl-item" style="background:#F5F3FF;border-left:3px solid #C7D2FE;align-items:flex-start"><div class="tl-dot-wrap" style="background:#EEF2FF;margin-top:2px"><div class="tl-dot" style="background:#6366F1"></div></div><div><div class="tl-label">사업 관리 Core</div><div class="tl-desc">· KERIS 포털 시스템 등록 작업</div></div></div>
+          <div class="tl-item" style="background:#F5F3FF;border-left:3px solid #C7D2FE;align-items:flex-start"><div class="tl-dot-wrap" style="background:#EEF2FF;margin-top:2px"><div class="tl-dot" style="background:#6366F1"></div></div><div><div class="tl-label">에듀테크플랫폼서비스운영 Cell</div><div class="tl-desc">· 사용 현황 확인<br>· 서비스 장애 대응</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-label" style="margin-top:8px">공통 운영 타임라인</div>
+    <div class="process-box">
+      <div class="timeline-header">
+        <div class="phase-block" style="background:#DEEAF1"><div class="phase-num" style="color:#1F4E79">PHASE 1</div><div class="phase-name" style="color:#1F4E79">사용 전 준비</div></div>
+        <div class="phase-arrow">›</div>
+        <div class="phase-block" style="background:#E2EFDA"><div class="phase-num" style="color:#375623">PHASE 2</div><div class="phase-name" style="color:#375623">사용 중</div></div>
+        <div class="phase-arrow">›</div>
+        <div class="phase-block" style="background:#FFF2CC"><div class="phase-num" style="color:#7F6000">PHASE 3</div><div class="phase-name" style="color:#7F6000">사용 후</div></div>
+        <div class="phase-arrow">›</div>
+        <div class="phase-block" style="background:#FCE4D6"><div class="phase-num" style="color:#833C00">PHASE 4</div><div class="phase-name" style="color:#833C00">후속 전환</div></div>
+      </div>
+      <div class="timeline-body">
+        <div class="tl-items">
+          <div class="tl-item" style="background:#f4f8fc"><div class="tl-dot-wrap" style="background:#DEEAF1"><div class="tl-dot" style="background:#1F4E79"></div></div><div><div class="tl-label">해피콜</div><div class="tl-desc">참여자 확인 및 일정 안내</div></div></div>
+          <div class="tl-item" style="background:#f4f8fc"><div class="tl-dot-wrap" style="background:#DEEAF1"><div class="tl-dot" style="background:#1F4E79"></div></div><div><div class="tl-label">KERIS 계정 생성</div><div class="tl-desc">KERIS 연동 또는 내부서버 계정 발급</div></div></div>
+          <div class="tl-item" style="background:#f4f8fc"><div class="tl-dot-wrap" style="background:#DEEAF1"><div class="tl-dot" style="background:#1F4E79"></div></div><div><div class="tl-label">웰컴키트 + 온보딩</div><div class="tl-desc">매뉴얼 배포 및 서비스 안내</div></div></div>
+        </div>
+        <div></div>
+        <div class="tl-items">
+          <div class="tl-item" style="background:#f4fcf7"><div class="tl-dot-wrap" style="background:#E2EFDA"><div class="tl-dot" style="background:#375623"></div></div><div><div class="tl-label">중간 미션 (D+40~45)</div><div class="tl-desc">중간 설문 + 수업 사진 후기</div></div></div>
+          <div class="tl-tag" style="background:#f0faf5"><div class="tl-tag-dot" style="background:#1D9E75"></div><div class="tl-tag-text" style="color:#375623">D+40일 시점 체크</div></div>
+        </div>
+        <div></div>
+        <div class="tl-items">
+          <div class="tl-item" style="background:#fdfcf0"><div class="tl-dot-wrap" style="background:#FFF2CC"><div class="tl-dot" style="background:#7F6000"></div></div><div><div class="tl-label">최종 설문</div><div class="tl-desc">교사 / 학생 대상</div></div></div>
+          <div class="tl-item" style="background:#fdfcf0"><div class="tl-dot-wrap" style="background:#FFF2CC"><div class="tl-dot" style="background:#7F6000"></div></div><div><div class="tl-label">수업 후기 제출</div><div class="tl-desc">마케팅 콘텐츠 활용</div></div></div>
+          <div class="tl-item" style="background:#fdfcf0"><div class="tl-dot-wrap" style="background:#FFF2CC"><div class="tl-dot" style="background:#7F6000"></div></div><div><div class="tl-label">인터뷰 / 사례 공유</div><div class="tl-desc">예산 지원 학교 해당</div></div></div>
+        </div>
+        <div></div>
+        <div class="tl-items">
+          <div class="tl-item" style="background:#fdf6f2"><div class="tl-dot-wrap" style="background:#FCE4D6"><div class="tl-dot" style="background:#833C00"></div></div><div><div class="tl-label">2학기 도입 유도</div><div class="tl-desc">30% 할인 제안</div></div></div>
+          <div class="tl-tag" style="background:#fef4ee"><div class="tl-tag-dot" style="background:#EF9F27"></div><div class="tl-tag-text" style="color:#833C00">계약 전환 목표</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 신청 현황 -->
+  <div class="page" id="page-apply">
+    <div class="page-header"><h1>신청 현황</h1><p>프로모션 유형별 신청·실참여·취소 현황</p></div>
+    <div class="tabs" id="applyTabBar" style="display:flex;flex-direction:column;gap:0;margin-bottom:20px"></div>
+    <div class="kpi-grid" id="applyKpi"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">신청 · 실참여 · 취소</div>
+        <div class="chart-sub" id="applyBarSub">프로모션 유형별 학교 수</div>
+        <div class="legend"><span><span class="leg-dot" style="background:#6366F1"></span>신청</span><span><span class="leg-dot" style="background:#10B981"></span>실참여</span><span><span class="leg-dot" style="background:#F87171"></span>취소</span></div>
+        <div style="position:relative;height:195px"><canvas id="applyChart1"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">학교급별 구성</div>
+        <div class="chart-sub">초등 / 중학 / 고등 비율</div>
+        <div class="legend"><span><span class="leg-dot" style="background:#10B981"></span>초등</span><span><span class="leg-dot" style="background:#3B82C4"></span>중학</span><span><span class="leg-dot" style="background:#F59E0B"></span>고등</span></div>
+        <div style="position:relative;height:195px"><canvas id="applyChart2"></canvas></div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">과목별 신청 비율</div>
+        <div class="chart-sub">학교급 선택 시 해당 비율 표시</div>
+        <div style="display:flex;gap:6px;margin-bottom:9px;flex-wrap:wrap" id="applySubjectTabs">
+          <button class="tab active" data-color="#0F172A" style="font-size:11px;padding:4px 10px;border-radius:8px;background:#0F172A;color:#fff;border-color:#0F172A" onclick="setApplySubjectTab('all',this)">전체</button>
+          <button class="tab" data-color="#10B981" style="font-size:11px;padding:4px 10px;border-radius:8px" onclick="setApplySubjectTab('elem',this)">초등</button>
+          <button class="tab" data-color="#3B82C4" style="font-size:11px;padding:4px 10px;border-radius:8px" onclick="setApplySubjectTab('mid',this)">중학</button>
+          <button class="tab" data-color="#F59E0B" style="font-size:11px;padding:4px 10px;border-radius:8px" onclick="setApplySubjectTab('high',this)">고등</button>
+        </div>
+        <div class="legend" id="applySubjectLegend"></div>
+        <div style="position:relative;height:155px"><canvas id="applyChart3"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">프로모션별 참여 학생 수</div>
+        <div class="chart-sub">실제 참여 학생 현황</div>
+        <div style="position:relative;height:195px"><canvas id="applyChart4"></canvas></div>
+      </div>
+    </div>
+    <div class="status-table-wrap">
+      <div class="status-table-head">프로모션별 상세</div>
+      <table class="status-tbl" id="applyTable"></table>
+    </div>
+  </div>
+
+  <!-- 사용 현황 -->
+  <div class="page" id="page-usage">
+    <div class="page-header"><h1>사용 현황</h1><p>AIDT 실제 활용 및 참여 현황</p></div>
+    <div class="tabs" id="usageTabBar" style="display:flex;flex-direction:column;gap:0;margin-bottom:20px"></div>
+    <div class="kpi-grid" id="usageKpi"></div>
+  </div>
+
+  <!-- 마케팅 미션 현황 -->
+  <div class="page" id="page-mission">
+    <div class="page-header"><h1>마케팅 미션 현황</h1><p>수업 후기·설문·인터뷰 등 미션 제출 현황</p></div>
+    <div class="tabs" id="missionTabBar" style="display:flex;flex-direction:column;gap:0;margin-bottom:20px"></div>
+    <div class="kpi-grid" id="missionKpi"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">미션 제출률</div>
+        <div class="chart-sub">중간(D+40~45) · 최종 달성률</div>
+        <div id="missionProgArea" style="margin-top:4px"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">중간 vs 최종 제출률 비교</div>
+        <div class="chart-sub">프로모션 유형별</div>
+        <div class="legend"><span><span class="leg-dot" style="background:#534AB7"></span>중간</span><span><span class="leg-dot" style="background:#D85A30"></span>최종</span></div>
+        <div style="position:relative;height:195px"><canvas id="missionChart1"></canvas></div>
+      </div>
+    </div>
+    <div class="status-table-wrap">
+      <div class="status-table-head">미션 상세 현황</div>
+      <table class="status-tbl" id="missionTable"></table>
+    </div>
+  </div>
+
+  <!-- 신청 학교 리스트 -->
+  <div class="page" id="page-schools">
+    <div class="page-header"><h1>신청 학교 리스트</h1><p>프로모션 참여 학교 현황 및 중간 점검 상태</p></div>
+    <div class="search-bar">
+      <input type="text" class="search-input" id="schoolSearch" placeholder="학교명/지역 검색" oninput="filterSchools()">
+      <select class="search-select" id="schoolRegionFilter" onchange="filterSchools()"><option value="">전체 지역</option></select>
+      <select class="search-select" id="schoolPromoFilter" onchange="filterSchools()"><option value="">전체 유형</option></select>
+    </div>
+    <div class="summary-chips" id="schoolsSummary"></div>
+    <div class="status-table-wrap">
+      <div class="status-table-head" style="display:flex;justify-content:space-between;align-items:center">
+        <span>학교 현황</span>
+        <span id="schoolsCount" style="font-size:12px;color:var(--text3);font-weight:400"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="status-tbl">
+          <thead><tr><th>지역(교육청)</th><th>학교명</th><th>과목</th><th>학년</th><th>선생님</th><th>학생 수</th><th>프로모션</th><th>중간 설문</th><th>중간 후기</th><th>비고</th></tr></thead>
+          <tbody id="schoolsBody"><tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">데이터 불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+if(window.ChartDataLabels) Chart.register(ChartDataLabels);
+
+const SHEET_CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ9pOEI8uoAsCMkrjDNOlizSwe0lJIBvyWt433w8ST55dyhPMPmTUbxOKamA8fdfC_vxfFrZ-PrOEE/pub?output=csv';
+const SCHOOLS_CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ9pOEI8uoAsCMkrjDNOlizSwe0lJIBvyWt433w8ST55dyhPMPmTUbxOKamA8fdfC_vxfFrZ-PrOEE/pub?gid=433896317&single=true&output=csv';
+
+const PROMO_TYPES=[
+  {color:'#6366F1',tag:'3개월 무료체험',name:'1. 3개월 무료체험',desc:'학기별 정기 운영 (연 2회)\n초·중·고 영어·수학 교사 대상\n구글폼 사전 신청'},
+  {color:'#10B981',tag:'초등 영어 서책',name:'2. 1년 무료체험',desc:'초등 비상 영어 5·6학년\n채택 학교 대상(53개교)\n공문 발송 + 현장 영업'},
+  {color:'#F59E0B',tag:'예산 지원',name:'3. 예산 지원',desc:'예산 부족 학교 대상\n정식 계약 + 마케팅 협조 조건\n(후기 작성 등)'},
+];
+
+const ALL_DATA=[
+  {key:'regular_1',type:'regular',group:'3mo',name:'3개월 무료체험(1차)',period:'2026.03.23~06.20',apply:116,actual:45,cancel:71,student:1554,mid:0,fin:0,e_math:83.6,e_eng:8.2,m_math:8.2,m_eng:0,m_info:0,h_math:0,h_eng:0,h_info:0,elem:88.9,mid2:11.1,high:0},
+  {key:'regular_2',type:'regular',group:'3mo',name:'3개월 무료체험(2차)',period:'2026.04.13~07.11',apply:116,actual:0,cancel:0,student:0,mid:0,fin:0,e_math:0,e_eng:0,m_math:0,m_eng:0,m_info:0,h_math:0,h_eng:0,h_info:0,elem:0,mid2:0,high:0},
+  {key:'spot_1',type:'spot',group:'3mo',name:'지식샘터(비정기)',period:'2026.04.13~07.11',apply:14,actual:13,cancel:1,student:374,mid:0,fin:0,e_math:78.6,e_eng:21.4,m_math:0,m_eng:0,m_info:0,h_math:0,h_eng:0,h_info:0,elem:100,mid2:0,high:0},
+  {key:'spot_2',type:'spot',group:'3mo',name:'충남초등영어(비정기)',period:'2026.05.04~08.01',apply:0,actual:0,cancel:0,student:0,mid:0,fin:0,e_math:0,e_eng:0,m_math:0,m_eng:0,m_info:0,h_math:0,h_eng:0,h_info:0,elem:0,mid2:0,high:0},
+  {key:'book_1',type:'book',group:'book',name:'',period:'2026.03.01~2027.02.28',apply:53,actual:5,cancel:3,student:1090,mid:0,fin:0,e_math:0,e_eng:100,m_math:0,m_eng:0,m_info:0,h_math:0,h_eng:0,h_info:0,elem:100,mid2:0,high:0},
+  {key:'budget_1',type:'budget',group:'budget',name:'',period:'상시',apply:14,actual:14,cancel:0,student:3267,mid:0,fin:0,e_math:46.4,e_eng:0,m_math:17.9,m_eng:7.1,m_info:17.9,h_math:14.3,h_eng:7.1,h_info:0,elem:21.4,mid2:57.1,high:21.4},
+];
+
+const TYPE_TABS=[
+  {key:'all',label:'전체',color:'#0F172A'},
+  {key:'3mo',label:'3개월 무료체험',color:'#6366F1'},
+  {key:'book',label:'초등 영어 서책 1년 무료체험',color:'#10B981'},
+  {key:'budget',label:'예산지원',color:'#F59E0B'},
+];
+const SUB_TABS_3MO=[{key:'regular',label:'정기'},{key:'spot',label:'비정기'}];
+
+let curPage='process',curApplyTab='all',curUsageTab='all',curMissionTab='all',applySubjectTab='all';
+let charts={},schoolsData=[];
+const nv=v=>parseFloat(v)||0;
+
+function getRows(tab){
+  if(tab==='all') return ALL_DATA;
+  if(tab==='3mo') return ALL_DATA.filter(d=>d.group==='3mo');
+  if(tab==='regular') return ALL_DATA.filter(d=>d.type==='regular');
+  return ALL_DATA.filter(d=>d.type===tab||d.group===tab||d.key===tab);
+}
+function avg(arr){return arr.length?Math.round(arr.reduce((s,v)=>s+v,0)/arr.length):0;}
+function dc(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+
+function goPage(page){
+  curPage=page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const idx=['process','apply','usage','mission','schools'].indexOf(page);
+  document.querySelectorAll('.nav-item')[idx].classList.add('active');
+  if(page==='apply') renderApply();
+  if(page==='usage') renderUsage();
+  if(page==='mission') renderMission();
+  if(page==='schools') loadSchools();
+}
+
+function renderPromoTypes(){
+  const g=document.getElementById('promoTypeGrid');
+  if(!g) return;
+  const c1=`<div style="background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#6366F1;border-radius:var(--r-md) var(--r-md) 0 0"></div>
+    <div style="font-size:10px;font-weight:700;color:#6366F1;margin-bottom:6px;margin-top:2px">3개월 무료체험</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:14px">1. 3개월 무료체험</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:#EEF2FF;border-radius:10px;padding:13px 14px;border:1px solid #C7D2FE">
+        <div style="font-size:10px;font-weight:700;color:#6366F1;margin-bottom:4px">ㄴ 정기</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text1);margin-bottom:4px">정기 프로모션</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.5">연 2회 (1학기·2학기(예정))<br>구글폼 사전 신청</div>
+      </div>
+      <div style="background:#EEF2FF;border-radius:10px;padding:13px 14px;border:1px solid #C7D2FE">
+        <div style="font-size:10px;font-weight:700;color:#6366F1;margin-bottom:4px">ㄴ 비정기</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text1);margin-bottom:4px">비정기 프로모션</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.5">지식샘터·연구회 등<br>현장 요청 수시 운영</div>
+      </div>
+    </div>
+    <button onclick="goPage('apply');setApplyTab('3mo')" style="width:100%;padding:8px 0;border-radius:8px;border:1.5px solid #6366F1;background:transparent;color:#6366F1;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#6366F1';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#6366F1'">신청 현황 바로가기 →</button>
+  </div>`;
+  const c2=`<div style="background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden;display:flex;flex-direction:column">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#10B981;border-radius:var(--r-md) var(--r-md) 0 0"></div>
+    <div style="font-size:10px;font-weight:700;color:#10B981;margin-bottom:6px;margin-top:2px">초등 영어 서책</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:8px">2. 1년 무료체험</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;flex:1">초등 비상 영어 5·6학년<br>채택 학교 대상(53개교)<br>공문 발송 + 현장 영업</div>
+    <button onclick="goPage('apply');setApplyTab('book')" style="margin-top:14px;width:100%;padding:8px 0;border-radius:8px;border:1.5px solid #10B981;background:transparent;color:#10B981;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#10B981';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#10B981'">신청 현황 바로가기 →</button>
+  </div>`;
+  const c3=`<div style="background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden;display:flex;flex-direction:column">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#F59E0B;border-radius:var(--r-md) var(--r-md) 0 0"></div>
+    <div style="font-size:10px;font-weight:700;color:#F59E0B;margin-bottom:6px;margin-top:2px">예산 지원</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:8px">3. 예산 지원</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;flex:1">예산 부족 학교 대상<br>정식 계약 + 마케팅 협조 조건<br>(후기 작성 등)</div>
+    <button onclick="goPage('apply');setApplyTab('budget')" style="margin-top:14px;width:100%;padding:8px 0;border-radius:8px;border:1.5px solid #F59E0B;background:transparent;color:#F59E0B;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#F59E0B';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#F59E0B'">신청 현황 바로가기 →</button>
+  </div>`;
+  g.innerHTML=c1+c2+c3;
+}
+
+function toggleEdit(){
+  const panel=document.getElementById('editPanel');
+  const btn=document.getElementById('editToggle');
+  if(panel.classList.contains('show')){panel.classList.remove('show');btn.classList.remove('active');btn.textContent='데이터 수정';return;}
+  const pw=prompt('비밀번호를 입력해주세요');
+  if(!pw) return;
+  if(pw!=='15447714'){alert('비밀번호가 올바르지 않습니다.');return;}
+  panel.classList.add('show');btn.classList.add('active');btn.textContent='닫기';
+  buildEditTables();
+}
+
+function buildEditTables(){
+  document.getElementById('promoTypeBody').innerHTML=PROMO_TYPES.map((p,i)=>`<tr>
+    <td><input type="color" id="ptc_${i}" value="${p.color}"></td>
+    <td><input type="text" class="wide" id="ptt_${i}" value="${p.tag}"></td>
+    <td><input type="text" class="wide" id="ptn_${i}" value="${p.name}"></td>
+    <td><input type="text" class="wider" id="ptd_${i}" value="${p.desc.replace(/\n/g,'\\n')}"></td>
+  </tr>`).join('');
+  document.getElementById('dataBody').innerHTML=ALL_DATA.map((d,i)=>`<tr>
+    <td><input type="text" class="wide" id="en_${i}" value="${d.name}"></td>
+    <td><input type="text" class="wide" id="ep_${i}" value="${d.period||''}"></td>
+    <td><input type="number" id="ea_${i}" value="${d.apply}" min="0"></td>
+    <td><input type="number" id="ec_${i}" value="${d.actual}" min="0"></td>
+    <td><input type="number" id="ek_${i}" value="${d.cancel||0}" min="0"></td>
+    <td><input type="number" id="es_${i}" value="${d.student}" min="0"></td>
+    <td><input type="number" id="emi_${i}" value="${d.mid}" min="0" max="100"></td>
+    <td><input type="number" id="ef_${i}" value="${d.fin}" min="0" max="100"></td>
+    <td><input type="number" id="em1_${i}" value="${d.e_math||0}" min="0" max="100"></td>
+    <td><input type="number" id="em2_${i}" value="${d.e_eng||0}" min="0" max="100"></td>
+    <td><input type="number" id="mm1_${i}" value="${d.m_math||0}" min="0" max="100"></td>
+    <td><input type="number" id="mm2_${i}" value="${d.m_eng||0}" min="0" max="100"></td>
+    <td><input type="number" id="mm3_${i}" value="${d.m_info||0}" min="0" max="100"></td>
+    <td><input type="number" id="hm1_${i}" value="${d.h_math||0}" min="0" max="100"></td>
+    <td><input type="number" id="hm2_${i}" value="${d.h_eng||0}" min="0" max="100"></td>
+    <td><input type="number" id="hm3_${i}" value="${d.h_info||0}" min="0" max="100"></td>
+    <td><input type="number" id="ee_${i}" value="${d.elem}" min="0" max="100"></td>
+    <td><input type="number" id="ed_${i}" value="${d.mid2}" min="0" max="100"></td>
+    <td><input type="number" id="eh_${i}" value="${d.high||0}" min="0" max="100"></td>
+  </tr>`).join('');
+}
+
+function applyEdit(){
+  PROMO_TYPES.forEach((p,i)=>{
+    const c=document.getElementById(`ptc_${i}`);const t=document.getElementById(`ptt_${i}`);
+    const nm=document.getElementById(`ptn_${i}`);const d=document.getElementById(`ptd_${i}`);
+    if(c)p.color=c.value;if(t)p.tag=t.value;if(nm)p.name=nm.value;
+    if(d)p.desc=d.value.replace(/\\n/g,'\n');
+  });
+  ALL_DATA.forEach((d,i)=>{
+    d.name=document.getElementById(`en_${i}`)?.value||d.name;
+    d.period=document.getElementById(`ep_${i}`)?.value||d.period;
+    d.apply=nv(document.getElementById(`ea_${i}`)?.value);
+    d.actual=nv(document.getElementById(`ec_${i}`)?.value);
+    d.cancel=nv(document.getElementById(`ek_${i}`)?.value);
+    d.student=nv(document.getElementById(`es_${i}`)?.value);
+    d.mid=nv(document.getElementById(`emi_${i}`)?.value);
+    d.fin=nv(document.getElementById(`ef_${i}`)?.value);
+    d.e_math=nv(document.getElementById(`em1_${i}`)?.value);
+    d.e_eng=nv(document.getElementById(`em2_${i}`)?.value);
+    d.m_math=nv(document.getElementById(`mm1_${i}`)?.value);
+    d.m_eng=nv(document.getElementById(`mm2_${i}`)?.value);
+    d.m_info=nv(document.getElementById(`mm3_${i}`)?.value);
+    d.h_math=nv(document.getElementById(`hm1_${i}`)?.value);
+    d.h_eng=nv(document.getElementById(`hm2_${i}`)?.value);
+    d.h_info=nv(document.getElementById(`hm3_${i}`)?.value);
+    d.elem=nv(document.getElementById(`ee_${i}`)?.value);
+    d.mid2=nv(document.getElementById(`ed_${i}`)?.value);
+    d.high=nv(document.getElementById(`eh_${i}`)?.value);
+  });
+  const now=new Date();
+  document.getElementById('updated-date').textContent=`마지막 업데이트: ${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  renderPromoTypes();
+  if(curPage==='apply') renderApply();
+  if(curPage==='usage') renderUsage();
+  if(curPage==='mission') renderMission();
+  alert('반영됐습니다!\n구글 시트도 함께 업데이트해주세요.');
+}
+
+function buildTabBar(elId,cur,setter){
+  var el=document.getElementById(elId);
+  if(!el) return;
+  var is3mo=cur==='3mo'||cur==='regular'||cur==='spot';
+  var mainHtml='<div style="display:flex;flex-direction:row;gap:6px;flex-wrap:wrap">';
+  TYPE_TABS.forEach(function(t){
+    var isActive=t.key===cur||(is3mo&&t.key==='3mo');
+    var style=isActive?'background:'+t.color+';color:#fff;border-color:'+t.color+';box-shadow:0 4px 12px '+t.color+'40':'';
+    mainHtml+='<button class="tab'+(isActive?' active':'')+'" style="'+style+'" onclick="'+setter+'(\''+t.key+'\')">'+t.label+'</button>';
+  });
+  mainHtml+='</div>';
+  var subHtml='';
+  if(is3mo){
+    subHtml='<div style="display:flex;gap:6px;margin-top:6px;padding-left:52px;align-items:center">';
+    subHtml+='<span style="font-size:10px;color:#818CF8;font-weight:600;margin-right:2px">└</span>';
+    SUB_TABS_3MO.forEach(function(t){
+      var isActive2=t.key===cur;
+      var s=isActive2?'background:#6366F1;color:#fff;border-color:#6366F1':'background:#EEF2FF;color:#6366F1;border-color:#C7D2FE';
+      subHtml+='<button style="font-size:11px;font-weight:600;padding:5px 16px;border-radius:99px;border:1.5px solid;cursor:pointer;font-family:inherit;transition:all .15s;'+s+'" onclick="'+setter+'(\''+t.key+'\')">'+t.label+'</button>';
+    });
+    subHtml+='</div>';
+  }
+  el.innerHTML=mainHtml+subHtml;
+}
+
+function renderKpi(elId,rows,type){
+  // 정기 여러 기수는 신청/취소를 첫 번째만 카운트 (공유된 수치)
+  const regularRows=rows.filter(d=>d.type==='regular');
+  const otherRowsKpi=rows.filter(d=>d.type!=='regular');
+  const tA=(regularRows.length>0?regularRows[0].apply||0:0)+otherRowsKpi.reduce((s,d)=>s+(d.apply||0),0);
+  const tC=rows.reduce((s,d)=>s+(d.actual||0),0);
+  const tX=(regularRows.length>0?regularRows[0].cancel||0:0)+otherRowsKpi.reduce((s,d)=>s+(d.cancel||0),0);
+  const tS=rows.reduce((s,d)=>s+(d.student||0),0);
+  const pct=tA?Math.round(tC/tA*100):0;
+  const cpct=tA?Math.round(tX/tA*100):0;
+  const am=avg(rows.filter(d=>d.mid>0).map(d=>d.mid));
+  const af=avg(rows.filter(d=>d.fin>0).map(d=>d.fin));
+  const colors=['#6366F1','#0EA5E9','#10B981'];
+  const maps={
+    apply:[
+      {label:'총 신청 학교',val:`${tA.toLocaleString()}개교`,sub:'프로모션 합산'},
+      {label:'실참여 학교',val:`${tC.toLocaleString()}개교`,sub:`참여율 ${pct}% · 취소 ${tX}개교(${cpct}%)`},
+      {label:'실제 참여 학생 수',val:`${tS.toLocaleString()}명`,sub:'전체 합산'},
+    ],
+    usage:[
+      {label:'실참여 학교',val:`${tC.toLocaleString()}개교`,sub:`참여율 ${pct}%`},
+      {label:'실제 참여 학생 수',val:`${tS.toLocaleString()}명`,sub:'전체 합산'},
+      {label:'참여 과목',val:'9개 과목',sub:'수학·영어·정보'},
+    ],
+    mission:[
+      {label:'평균 중간 제출률',val:`${am}%`,sub:'D+40~45 기준'},
+      {label:'평균 최종 제출률',val:`${af>0?af+'%':'–'}`,sub:'체험 종료 시'},
+      {label:'미션 대상 학교',val:`${tC.toLocaleString()}개교`,sub:'실참여 기준'},
+    ],
+  };
+  document.getElementById(elId).innerHTML=maps[type].map((k,i)=>
+    `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val" style="color:${colors[i]}">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`
+  ).join('');
+}
+
+function setApplyTab(tab){curApplyTab=tab;renderApply();}
+function setApplySubjectTab(tab,btn){
+  applySubjectTab=tab;
+  document.querySelectorAll('#applySubjectTabs .tab').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';b.style.borderColor='';});
+  btn.classList.add('active');
+  const c=btn.dataset.color||'#0F172A';
+  btn.style.background=c;btn.style.color='#fff';btn.style.borderColor=c;
+  renderApplySubjectChart(getRows(curApplyTab));
+}
+function renderApplySubjectChart(rows){
+  const leg=document.getElementById('applySubjectLegend');
+  let labels,colors,vals;
+  if(applySubjectTab==='all'){
+    labels=['초등 수학','초등 영어','중학 수학','중학 영어','중학 정보','고등 수학','고등 영어','고등 정보'];
+    colors=['#534AB7','#D85A30','#7B6FE8','#E8845A','#1D9E75','#9B8FF5','#F0A070','#2EB88A'];
+    const fs=['e_math','e_eng','m_math','m_eng','m_info','h_math','h_eng','h_info'];
+    vals=fs.map(f=>{const r=rows.filter(d=>(d[f]||0)>0);return r.length?Math.round(r.reduce((s,d)=>s+(d[f]||0),0)/r.length):0;});
+  }else if(applySubjectTab==='elem'){
+    labels=['수학','영어'];colors=['#534AB7','#D85A30'];
+    vals=[Math.round(rows.filter(d=>d.e_math>0).reduce((s,d)=>s+d.e_math,0)/Math.max(rows.filter(d=>d.e_math>0).length,1))||0,Math.round(rows.filter(d=>d.e_eng>0).reduce((s,d)=>s+d.e_eng,0)/Math.max(rows.filter(d=>d.e_eng>0).length,1))||0];
+  }else if(applySubjectTab==='mid'){
+    labels=['수학','영어','정보'];colors=['#534AB7','#D85A30','#1D9E75'];
+    vals=[Math.round(rows.filter(d=>d.m_math>0).reduce((s,d)=>s+d.m_math,0)/Math.max(rows.filter(d=>d.m_math>0).length,1))||0,Math.round(rows.filter(d=>d.m_eng>0).reduce((s,d)=>s+d.m_eng,0)/Math.max(rows.filter(d=>d.m_eng>0).length,1))||0,Math.round(rows.filter(d=>d.m_info>0).reduce((s,d)=>s+d.m_info,0)/Math.max(rows.filter(d=>d.m_info>0).length,1))||0];
+  }else{
+    labels=['수학','영어','정보'];colors=['#534AB7','#D85A30','#1D9E75'];
+    vals=[Math.round(rows.filter(d=>d.h_math>0).reduce((s,d)=>s+d.h_math,0)/Math.max(rows.filter(d=>d.h_math>0).length,1))||0,Math.round(rows.filter(d=>d.h_eng>0).reduce((s,d)=>s+d.h_eng,0)/Math.max(rows.filter(d=>d.h_eng>0).length,1))||0,Math.round(rows.filter(d=>d.h_info>0).reduce((s,d)=>s+d.h_info,0)/Math.max(rows.filter(d=>d.h_info>0).length,1))||0];
+  }
+  if(leg) leg.innerHTML=labels.map((l,i)=>`<span><span class="leg-dot" style="background:${colors[i]}"></span>${l}</span>`).join('');
+  dc('ac3');
+  const total=vals.reduce((s,v)=>s+v,0);
+  charts.ac3=new Chart(document.getElementById('applyChart3'),{type:'doughnut',
+    data:{labels,datasets:[{data:total>0?vals:vals.map(()=>1),backgroundColor:colors,borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${Math.round(ctx.parsed)}%`}},
+        datalabels:{display:true,color:'#fff',font:{size:11,weight:'700'},formatter:(v,ctx)=>{const t=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);return t>0&&v>0?Math.round(v/t*100)+'%':'';}}}
+    }
+  });
+}
+
+function renderApply(){
+  buildTabBar('applyTabBar',curApplyTab,'setApplyTab');
+  const rows=getRows(curApplyTab);
+  renderKpi('applyKpi',rows,'apply');
+  dc('ac1');dc('ac2');dc('ac3');dc('ac4');
+  // 차트용 rows - 정기 여러 기수는 첫번째만
+  const regularR=rows.filter(d=>d.type==='regular');
+  const chartRows=regularR.length>1
+    ?[{...regularR[0],name:'정기 통합',apply:regularR[0].apply,actual:regularR.reduce((s,d)=>s+d.actual,0),cancel:regularR[0].cancel,student:regularR.reduce((s,d)=>s+d.student,0)},...rows.filter(d=>d.type!=='regular')]
+    :rows;
+  const bC=['#6366F1','#818CF8','#4338CA','#A5B4FC','#6366F1'];
+  const aC=['#10B981','#34D399','#059669','#6EE7B7','#10B981'];
+  charts.ac1=new Chart(document.getElementById('applyChart1'),{type:'bar',
+    data:{labels:chartRows.map(d=>d.name),datasets:[
+      {label:'신청',data:chartRows.map(d=>d.apply),backgroundColor:chartRows.map((_,i)=>bC[i%bC.length]),borderRadius:5,barPercentage:.5},
+      {label:'실참여',data:chartRows.map(d=>d.actual),backgroundColor:chartRows.map((_,i)=>aC[i%aC.length]),borderRadius:5,barPercentage:.5},
+      {label:'취소',data:chartRows.map(d=>d.cancel||0),backgroundColor:'#F87171',borderRadius:5,barPercentage:.5},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+      plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',font:{size:10,weight:'600'},formatter:v=>v>0?v+'개교':'',color:'#475569'}},
+      scales:{x:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:'#f0f0ee'}}}}
+  });
+  const eA=avg(rows.filter(d=>d.elem>0).map(d=>d.elem));
+  const mA=avg(rows.filter(d=>d.mid2>0).map(d=>d.mid2));
+  const hA=avg(rows.filter(d=>d.high>0).map(d=>d.high))||Math.max(0,100-eA-mA);
+  charts.ac2=new Chart(document.getElementById('applyChart2'),{type:'doughnut',
+    data:{labels:['초등','중학','고등'],datasets:[{data:[eA,mA,hA],backgroundColor:['#10B981','#3B82C4','#F59E0B'],borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${Math.round(ctx.parsed)}%`}},
+        datalabels:{display:true,color:'#fff',font:{size:12,weight:'700'},formatter:(v,ctx)=>{const t=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);return t>0?Math.round(v/t*100)+'%':'';}}}
+    }
+  });
+  applySubjectTab='all';
+  document.querySelectorAll('#applySubjectTabs .tab').forEach((b,i)=>{
+    b.classList.toggle('active',i===0);b.style.background='';b.style.color='';b.style.borderColor='';
+    if(i===0){b.style.background='#0F172A';b.style.color='#fff';b.style.borderColor='#0F172A';}
+  });
+  renderApplySubjectChart(rows);
+  const sC=['#6366F1','#818CF8','#0EA5E9','#10B981','#F59E0B'];
+  charts.ac4=new Chart(document.getElementById('applyChart4'),{type:'bar',
+    data:{labels:chartRows.map(d=>d.name),datasets:[{label:'학생 수',data:chartRows.map(d=>d.student),backgroundColor:rows.map((_,i)=>sC[i%sC.length]),borderRadius:6,barPercentage:.55}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+      plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',font:{size:10,weight:'600'},formatter:v=>v>0?v.toLocaleString()+'명':'',color:'#475569'}},
+      scales:{x:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:'#f0f0ee'}}}}
+  });
+  const regularRows=rows.filter(d=>d.type==='regular');
+  const otherRows=rows.filter(d=>d.type!=='regular');
+  let tableRows=[];
+  if(regularRows.length>1){
+    const r=regularRows[0];
+    const periods=regularRows.map((d,i)=>`${i+1}차: ${d.period||'-'}`).join('<br>');
+    const p=r.apply?Math.round(r.actual/r.apply*100):0;
+    tableRows.push(`<tr><td style="font-weight:500">3개월 무료체험 (정기)</td><td style="color:#888;font-size:11px;line-height:1.8">${periods}</td><td>${r.apply}개교</td><td>${r.actual}개교</td><td>${r.cancel||0}개교</td><td><div class="pct-bar-wrap"><div class="pct-bar-track"><div class="pct-bar-fill" style="width:${p}%;background:#10B981"></div></div>${p}%</div></td><td>${r.student.toLocaleString()}명</td></tr>`);
+  }else{
+    regularRows.forEach(d=>{const p=d.apply?Math.round(d.actual/d.apply*100):0;tableRows.push(`<tr><td style="font-weight:500">${d.name}</td><td style="color:#888;font-size:11px">${d.period||'-'}</td><td>${d.apply}개교</td><td>${d.actual}개교</td><td>${d.cancel||0}개교</td><td><div class="pct-bar-wrap"><div class="pct-bar-track"><div class="pct-bar-fill" style="width:${p}%;background:#10B981"></div></div>${p}%</div></td><td>${d.student.toLocaleString()}명</td></tr>`);});
+  }
+  otherRows.forEach(d=>{const p=d.apply?Math.round(d.actual/d.apply*100):0;tableRows.push(`<tr><td style="font-weight:500">${d.name||'-'}</td><td style="color:#888;font-size:11px">${d.period||'-'}</td><td>${d.apply}개교</td><td>${d.actual}개교</td><td>${d.cancel||0}개교</td><td><div class="pct-bar-wrap"><div class="pct-bar-track"><div class="pct-bar-fill" style="width:${p}%;background:#10B981"></div></div>${p}%</div></td><td>${d.student.toLocaleString()}명</td></tr>`);});
+  document.getElementById('applyTable').innerHTML=`<thead><tr><th>기수</th><th>운영 기간</th><th>신청</th><th>실참여</th><th>취소</th><th>참여율</th><th>학생 수</th></tr></thead><tbody>`+tableRows.join('')+`</tbody>`;
+}
+
+function setUsageTab(tab){curUsageTab=tab;renderUsage();}
+function renderUsage(){
+  buildTabBar('usageTabBar',curUsageTab,'setUsageTab');
+  renderKpi('usageKpi',getRows(curUsageTab),'usage');
+}
+
+function setMissionTab(tab){curMissionTab=tab;renderMission();}
+function renderMission(){
+  buildTabBar('missionTabBar',curMissionTab,'setMissionTab');
+  const rows=getRows(curMissionTab);
+  renderKpi('missionKpi',rows,'mission');
+  dc('mc1');
+  const pC=['#6366F1','#818CF8','#0EA5E9','#10B981','#F59E0B'];
+  document.getElementById('missionProgArea').innerHTML=rows.map((d,i)=>`
+    <div class="prog-row">
+      <div class="prog-name">${d.name||d.group}</div>
+      <div class="prog-bars">
+        <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:${d.mid}%;background:${pC[i%pC.length]}"></div></div><span class="prog-tag">중간</span><span class="prog-pct">${d.mid>0?d.mid+'%':'–'}</span></div>
+        <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:${d.fin}%;background:${pC[i%pC.length]};opacity:.45"></div></div><span class="prog-tag">최종</span><span class="prog-pct">${d.fin>0?d.fin+'%':'–'}</span></div>
+      </div>
+    </div>`).join('');
+  charts.mc1=new Chart(document.getElementById('missionChart1'),{type:'bar',
+    data:{labels:rows.map(d=>d.name||d.group),datasets:[
+      {label:'중간',data:rows.map(d=>d.mid),backgroundColor:'#534AB7',borderRadius:5,barPercentage:.5},
+      {label:'최종',data:rows.map(d=>d.fin),backgroundColor:'#D85A30',borderRadius:5,barPercentage:.5},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}},y:{min:0,max:100,ticks:{font:{size:10}},grid:{color:'#f0f0ee'}}}}
+  });
+  document.getElementById('missionTable').innerHTML=`<thead><tr><th>기수</th><th>운영 기간</th><th>중간 제출률</th><th>최종 제출률</th><th>협조 항목</th><th>상태</th></tr></thead><tbody>`+
+    rows.map(d=>{const s=d.fin>0?'완료':d.mid>0?'진행 중':'준비 중';const bc=d.fin>0?'badge-green':d.mid>0?'badge-blue':'badge-amber';
+      return`<tr><td style="font-weight:500">${d.name||'-'}</td><td style="color:#888;font-size:11px">${d.period||'-'}</td>
+      <td><div class="pct-bar-wrap"><div class="pct-bar-track"><div class="pct-bar-fill" style="width:${d.mid}%;background:#534AB7"></div></div>${d.mid>0?d.mid+'%':'–'}</div></td>
+      <td><div class="pct-bar-wrap"><div class="pct-bar-track"><div class="pct-bar-fill" style="width:${d.fin}%;background:#D85A30"></div></div>${d.fin>0?d.fin+'%':'–'}</div></td>
+      <td>${d.key==='budget_1'?'후기·설문·인터뷰':'수업 후기·설문'}</td>
+      <td><span class="badge ${bc}">${s}</span></td></tr>`;}).join('')+`</tbody>`;
+}
+
+async function loadSchools(){
+  if(schoolsData.length>0){renderSchools();return;}
+  const PROXIES=['https://api.allorigins.win/raw?url='+encodeURIComponent(SCHOOLS_CSV_URL),'https://corsproxy.io/?url='+encodeURIComponent(SCHOOLS_CSV_URL),SCHOOLS_CSV_URL];
+  let text='';
+  for(const proxy of PROXIES){try{const res=await fetch(proxy);if(res.ok){text=await res.text();break;}}catch(e){continue;}}
+  if(!text){document.getElementById('schoolsBody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">데이터를 불러올 수 없습니다</td></tr>';return;}
+  schoolsData=text.trim().split('\n').slice(1).map(row=>{
+    const c=row.split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+    return{region:c[0]||'',school:c[1]||'',subject:c[2]||'',grade:c[3]||'',teachers:c[4]||'',students:c[5]||'',promo:c[6]||'',mid_survey:c[7]||'',mid_review:c[8]||'',note:c[9]||''};
+  }).filter(d=>d.school);
+  renderSchools();
+}
+function renderSchools(){
+  const rSel=document.getElementById('schoolRegionFilter');
+  const pSel=document.getElementById('schoolPromoFilter');
+  const regions=[...new Set(schoolsData.map(d=>d.region).filter(Boolean))];
+  const promos=[...new Set(schoolsData.map(d=>d.promo).filter(Boolean))];
+  rSel.innerHTML='<option value="">전체 지역</option>'+regions.map(r=>`<option value="${r}">${r}</option>`).join('');
+  pSel.innerHTML='<option value="">전체 유형</option>'+promos.map(p=>`<option value="${p}">${p}</option>`).join('');
+  filterSchools();
+}
+function filterSchools(){
+  const search=document.getElementById('schoolSearch').value.toLowerCase();
+  const region=document.getElementById('schoolRegionFilter').value;
+  const promo=document.getElementById('schoolPromoFilter').value;
+  const filtered=schoolsData.filter(d=>(!search||(d.school.toLowerCase().includes(search)||d.region.toLowerCase().includes(search)))&&(!region||d.region===region)&&(!promo||d.promo===promo));
+  const total=filtered.length;
+  const sd=filtered.filter(d=>d.mid_survey==='O'||d.mid_survey==='제출').length;
+  const rd=filtered.filter(d=>d.mid_review==='O'||d.mid_review==='제출').length;
+  document.getElementById('schoolsSummary').innerHTML=
+    `<div class="summary-chip"><span style="color:var(--text3)">총 학교</span><span style="font-size:18px;font-weight:700;color:#6366F1;margin-left:8px">${total}개교</span></div>
+     <div class="summary-chip"><span style="color:var(--text3)">중간 설문 완료</span><span style="font-size:18px;font-weight:700;color:#10B981;margin-left:8px">${sd}개교</span></div>
+     <div class="summary-chip"><span style="color:var(--text3)">중간 후기 완료</span><span style="font-size:18px;font-weight:700;color:#F59E0B;margin-left:8px">${rd}개교</span></div>`;
+  document.getElementById('schoolsCount').textContent=`총 ${total}개교`;
+  document.getElementById('schoolsBody').innerHTML=filtered.length===0
+    ?`<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">검색 결과가 없습니다</td></tr>`
+    :filtered.map(d=>{
+      const sb=d.mid_survey==='O'||d.mid_survey==='제출'?`<span class="badge badge-green">제출</span>`:d.mid_survey?`<span class="badge badge-amber">미제출</span>`:`<span style="color:var(--text3)">-</span>`;
+      const rb=d.mid_review==='O'||d.mid_review==='제출'?`<span class="badge badge-green">제출</span>`:d.mid_review?`<span class="badge badge-amber">미제출</span>`:`<span style="color:var(--text3)">-</span>`;
+      return`<tr><td style="color:var(--text2);font-size:12px">${d.region}</td><td style="font-weight:600">${d.school}</td><td>${d.subject}</td><td>${d.grade}</td><td style="text-align:center">${d.teachers}</td><td style="text-align:center">${d.students}</td><td><span style="font-size:11px;background:#EEF2FF;color:#6366F1;padding:3px 8px;border-radius:99px;font-weight:600">${d.promo}</span></td><td style="text-align:center">${sb}</td><td style="text-align:center">${rb}</td><td style="color:var(--text3);font-size:12px">${d.note}</td></tr>`;
+    }).join('');
+}
+
+async function loadFromSheet(){
+  document.getElementById('updated-date').textContent='데이터 불러오는 중...';
+  const PROXIES=['https://api.allorigins.win/raw?url='+encodeURIComponent(SHEET_CSV_URL),'https://corsproxy.io/?url='+encodeURIComponent(SHEET_CSV_URL),SHEET_CSV_URL];
+  let text='';
+  try{
+    for(const proxy of PROXIES){try{const res=await fetch(proxy);if(res.ok){text=await res.text();break;}}catch(e){continue;}}
+    if(text){
+      text.trim().split('\n').slice(1).forEach(row=>{
+        const c=row.split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+        const[key,name,apply,actual,cancel,student,mid,fin,e_math,e_eng,m_math,m_eng,m_info,h_math,h_eng,h_info,elem,mid2,high,period]=c;
+        const d=ALL_DATA.find(r=>r.key===key);
+        if(!d) return;
+        Object.assign(d,{apply:nv(apply),actual:nv(actual),cancel:nv(cancel),student:nv(student),mid:nv(mid),fin:nv(fin),e_math:nv(e_math),e_eng:nv(e_eng),m_math:nv(m_math),m_eng:nv(m_eng),m_info:nv(m_info),h_math:nv(h_math),h_eng:nv(h_eng),h_info:nv(h_info),elem:nv(elem),mid2:nv(mid2),high:nv(high),period:period||d.period,name:name||d.name});
+      });
+      document.getElementById('updated-date').textContent='업데이트 주기: 매일 · '+new Date().toLocaleDateString('ko-KR');
+    }
+  }catch(e){
+    console.warn('시트 로드 실패:',e);
+    document.getElementById('updated-date').textContent='업데이트 주기: 매일';
+  }finally{
+    renderPromoTypes();renderApply();renderUsage();renderMission();
+  }
+}
+
+loadFromSheet();
+setInterval(()=>loadFromSheet(),10*60*1000);
+</script>
+</body>
+</html>
