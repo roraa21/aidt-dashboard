@@ -771,12 +771,21 @@ async function loadUsageSchools(){
     usageSchoolsData=json.map(row=>{
       const school=row['school']||row['학교명']||'';
       const matched=schoolsData.find(s=>s.school===school);
-      const promo=matched?matched.promo:(row['promo']||row['프로모션']||'');
-      const teacher_access=row['teacher_access']||row['교사_최근접속일시']||'';
-      const student_access=row['student_access']||row['학생_최근접속일시']||'';
+      const promo=matched?matched.promo:(row['promo']||row['프로모션']||'미분류');
+      const teacher_access_raw=row['teacher_access']||row['교사_최근접속일시']||'';
+      const student_access_raw=row['student_access']||row['학생_최근접속일시']||'';
+      // ISO 날짜를 한국 시간으로 변환
+      const fmtDate=iso=>{
+        if(!iso) return '';
+        const d=new Date(iso);
+        if(isNaN(d)) return iso;
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      };
+      const teacher_access=fmtDate(teacher_access_raw);
+      const student_access=fmtDate(student_access_raw);
       // 교사 접속일 기준 주차 자동 계산 (월요일 시작)
       let week='';
-      const baseDate=teacher_access||student_access;
+      const baseDate=teacher_access_raw||student_access_raw;
       if(baseDate){
         const d=new Date(baseDate);
         if(!isNaN(d)){
@@ -847,11 +856,13 @@ function renderUsageTable(){
   // 현재 탭 기준 프로모션 필터
   const tab=curUsageTab;
   let filtered=usageSchoolsData;
-  if(tab==='3mo') filtered=usageSchoolsData.filter(d=>d.promo.includes('무료체험')||d.promo.includes('지식샘터')||d.promo.includes('충남'));
-  else if(tab==='regular') filtered=usageSchoolsData.filter(d=>d.promo.includes('무료체험'));
-  else if(tab==='spot') filtered=usageSchoolsData.filter(d=>d.promo.includes('지식샘터')||d.promo.includes('충남'));
-  else if(tab==='book') filtered=usageSchoolsData.filter(d=>d.promo.includes('서책')||d.promo.includes('1년'));
-  else if(tab==='budget') filtered=usageSchoolsData.filter(d=>d.promo.includes('예산'));
+  if(tab!=='all'){
+    if(tab==='3mo') filtered=usageSchoolsData.filter(d=>d.promo.includes('무료체험')||d.promo.includes('지식샘터')||d.promo.includes('충남'));
+    else if(tab==='regular') filtered=usageSchoolsData.filter(d=>d.promo.includes('무료체험')&&!d.promo.includes('지식샘터'));
+    else if(tab==='spot') filtered=usageSchoolsData.filter(d=>d.promo.includes('지식샘터')||d.promo.includes('충남'));
+    else if(tab==='book') filtered=usageSchoolsData.filter(d=>d.promo.includes('서책')||d.promo.includes('1년'));
+    else if(tab==='budget') filtered=usageSchoolsData.filter(d=>d.promo.includes('예산'));
+  }
 
   if(filtered.length===0){
     el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">사용 현황 데이터가 없습니다<br><span style="font-size:11px">구글 시트 usage 탭에 데이터를 입력해주세요</span></div>';
