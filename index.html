@@ -316,14 +316,14 @@ table.status-tbl tr:hover td{background:var(--surface2)}
     <div class="tabs" id="usageTabBar" style="display:flex;flex-direction:column;gap:0;margin-bottom:20px"></div>
     <div class="charts-row" id="usageChartsRow" style="display:none">
       <div class="chart-card">
-        <div class="chart-title">프로모션별 접속 학교 비율</div>
-        <div class="chart-sub">전체 대비 각 프로모션 비율</div>
+        <div class="chart-title">신청 대비 사용 학교 비율</div>
+        <div class="chart-sub">신청 학교 중 실제 접속한 학교 비율</div>
         <div class="legend" id="usagePromoLegend"></div>
         <div style="position:relative;height:195px"><canvas id="usagePromoChart"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">프로모션별 접속 학교 수</div>
-        <div class="chart-sub">실제 접속한 학교 현황</div>
+        <div class="chart-title">프로모션별 사용 현황</div>
+        <div class="chart-sub">신청 vs 실제 사용 학교 수</div>
         <div style="position:relative;height:195px"><canvas id="usageBarChart"></canvas></div>
       </div>
     </div>
@@ -850,40 +850,90 @@ async function loadUsageSchools(){
 }
 
 function renderUsageCharts(data){
-  const promoMap={};
-  data.forEach(d=>{
-    const p=d.promo||'기타';
-    if(!promoMap[p]) promoMap[p]=new Set();
-    promoMap[p].add(d.school);
-  });
-  const labels=Object.keys(promoMap);
-  const values=labels.map(p=>promoMap[p].size);
-  const colors=['#6366F1','#10B981','#F59E0B','#0EA5E9','#F87171','#818CF8'];
-  const total=values.reduce((s,v)=>s+v,0);
-
   const row=document.getElementById('usageChartsRow');
   if(row) row.style.display='grid';
 
-  const leg=document.getElementById('usagePromoLegend');
-  if(leg) leg.innerHTML=labels.map((l,i)=>`<span><span class="leg-dot" style="background:${colors[i%colors.length]}"></span>${l}</span>`).join('');
+  // 탭별 신청 학교 수 (ALL_DATA 기준)
+  const applyMap={
+    'all': ALL_DATA.reduce((s,d)=>s+(d.type==='regular'&&d.key!=='regular_2'?d.apply:(d.type!=='regular'?d.apply:0)),0),
+    '3mo': ALL_DATA.filter(d=>d.group==='3mo').reduce((s,d)=>s+(d.type==='regular'&&d.key==='regular_1'?d.apply:d.type!=='regular'?d.apply:0),0),
+    'regular': ALL_DATA.filter(d=>d.type==='regular')[0]?.apply||0,
+    'spot': ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+d.apply,0),
+    'book': ALL_DATA.find(d=>d.key==='book_1')?.apply||0,
+    'budget': ALL_DATA.find(d=>d.key==='budget_1')?.apply||0,
+  };
 
-  dc('upc');
-  charts.upc=new Chart(document.getElementById('usagePromoChart'),{type:'doughnut',
-    data:{labels,datasets:[{data:values,backgroundColor:colors.slice(0,labels.length),borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed}개교 (${total>0?Math.round(ctx.parsed/total*100):0}%)`}},
-        datalabels:{display:true,color:'#fff',font:{size:11,weight:'700'},
-          formatter:(v)=>total>0&&v>0?Math.round(v/total*100)+'%':''}}}
+  // 프로모션별 그룹핑 (사용 학교 수 - 중복 제거)
+  const promoMap={};
+  data.forEach(d=>{
+    const p=d.promo||'미분류';
+    if(!promoMap[p]) promoMap[p]=new Set();
+    promoMap[p].add(d.school);
   });
 
+  // 탭 기준 라벨/신청수 설정
+  let chartData=[];
+  const tab=curUsageTab;
+  if(tab==='all'||tab==='3mo'){
+    // 정기/비정기 나눠서 표시
+    const regularSchools=new Set(data.filter(d=>d.promo&&d.promo.includes('무료체험')&&!d.promo.includes('지식샘터')&&!d.promo.includes('충남')).map(d=>d.school));
+    const spotSchools=new Set(data.filter(d=>d.promo&&(d.promo.includes('지식샘터')||d.promo.includes('충남'))).map(d=>d.school));
+    const bookSchools=new Set(data.filter(d=>d.promo&&(d.promo.includes('서책')||d.promo.includes('1년'))).map(d=>d.school));
+    const budgetSchools=new Set(data.filter(d=>d.promo&&d.promo.includes('예산')).map(d=>d.school));
+
+    if(tab==='all'){
+      chartData=[
+        {label:'정기',used:regularSchools.size,apply:ALL_DATA.find(d=>d.key==='regular_1')?.apply||0,color:'#6366F1'},
+        {label:'비정기',used:spotSchools.size,apply:ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+d.apply,0),color:'#818CF8'},
+        {label:'서책 1년',used:bookSchools.size,apply:ALL_DATA.find(d=>d.key==='book_1')?.apply||0,color:'#10B981'},
+        {label:'예산지원',used:budgetSchools.size,apply:ALL_DATA.find(d=>d.key==='budget_1')?.apply||0,color:'#F59E0B'},
+      ];
+    } else {
+      chartData=[
+        {label:'정기',used:regularSchools.size,apply:ALL_DATA.find(d=>d.key==='regular_1')?.apply||0,color:'#6366F1'},
+        {label:'비정기',used:spotSchools.size,apply:ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+d.apply,0),color:'#818CF8'},
+      ];
+    }
+  } else {
+    // 단일 프로모션 탭
+    const usedSchools=new Set(data.map(d=>d.school));
+    const applyCount=applyMap[tab]||0;
+    const labels={'regular':'정기','spot':'비정기','book':'서책 1년','budget':'예산지원'};
+    const colors={'regular':'#6366F1','spot':'#818CF8','book':'#10B981','budget':'#F59E0B'};
+    chartData=[{label:labels[tab]||tab,used:usedSchools.size,apply:applyCount,color:colors[tab]||'#6366F1'}];
+  }
+
+  // 레전드
+  const leg=document.getElementById('usagePromoLegend');
+  if(leg) leg.innerHTML=chartData.map(d=>`<span><span class="leg-dot" style="background:${d.color}"></span>${d.label} (${d.apply}개교 중 ${d.used}개교)</span>`).join('');
+
+  // 도넛 차트 - 사용/미사용 비율
+  dc('upc');
+  const totalUsed=chartData.reduce((s,d)=>s+d.used,0);
+  const totalApply=chartData.reduce((s,d)=>s+d.apply,0);
+  const notUsed=Math.max(0,totalApply-totalUsed);
+  charts.upc=new Chart(document.getElementById('usagePromoChart'),{type:'doughnut',
+    data:{labels:['사용','미사용'],datasets:[{data:[totalUsed,notUsed],backgroundColor:['#6366F1','#E2E8F0'],borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed}개교 (${totalApply>0?Math.round(ctx.parsed/totalApply*100):0}%)`}},
+        datalabels:{display:true,color:['#fff','#94A3B8'],font:{size:11,weight:'700'},
+          formatter:(v)=>totalApply>0&&v>0?Math.round(v/totalApply*100)+'%':''}}}
+  });
+
+  // 막대 차트 - 프로모션별 신청 대비 사용 비율
   dc('ubc');
   charts.ubc=new Chart(document.getElementById('usageBarChart'),{type:'bar',
-    data:{labels,datasets:[{label:'학교 수',data:values,backgroundColor:colors.slice(0,labels.length),borderRadius:6,barPercentage:.55}]},
+    data:{labels:chartData.map(d=>d.label),datasets:[
+      {label:'사용',data:chartData.map(d=>d.used),backgroundColor:chartData.map(d=>d.color),borderRadius:5,barPercentage:.5},
+      {label:'미사용',data:chartData.map(d=>Math.max(0,d.apply-d.used)),backgroundColor:'#E2E8F0',borderRadius:5,barPercentage:.5},
+    ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
       plugins:{legend:{display:false},
-        datalabels:{display:true,anchor:'end',align:'top',font:{size:10,weight:'600'},formatter:v=>v>0?v+'개교':'',color:'#475569'}},
-      scales:{x:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:'#f0f0ee'}}}}
+        datalabels:{display:true,anchor:'end',align:'top',font:{size:10,weight:'600'},
+          formatter:(v,ctx)=>ctx.datasetIndex===0&&v>0?v+'개교':'',color:'#475569'}},
+      scales:{x:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}},
+              y:{ticks:{font:{size:10}},grid:{color:'#f0f0ee'}}}}
   });
 }
 
