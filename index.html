@@ -752,7 +752,7 @@ function renderMission(){
 
 async function loadSchools(){
   if(schoolsData.length>0){renderSchools();return;}
-  const PROXIES=['https://api.allorigins.win/raw?url='+encodeURIComponent(SCHOOLS_CSV_URL+'&t='+Date.now()),'https://corsproxy.io/?url='+encodeURIComponent(SCHOOLS_CSV_URL)+'&t='+Date.now(),SCHOOLS_CSV_URL+'&t='+Date.now()];
+  const PROXIES=['https://corsproxy.io/?'+encodeURIComponent(SCHOOLS_CSV_URL),'https://thingproxy.freeboard.io/fetch/'+SCHOOLS_CSV_URL,SCHOOLS_CSV_URL];
   let text='';
   for(const proxy of PROXIES){try{const res=await fetch(proxy,{cache:'no-store'});if(res.ok){text=await res.text();break;}}catch(e){continue;}}
   if(!text){document.getElementById('schoolsBody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">데이터를 불러올 수 없습니다</td></tr>';return;}
@@ -799,7 +799,7 @@ function filterSchools(){
 
 async function loadFromSheet(){
   document.getElementById('updated-date').textContent='데이터 불러오는 중...';
-  const PROXIES=['https://api.allorigins.win/raw?url='+encodeURIComponent(SHEET_CSV_URL+'&t='+Date.now()),'https://corsproxy.io/?url='+encodeURIComponent(SHEET_CSV_URL)+'&t='+Date.now(),SHEET_CSV_URL+'&t='+Date.now()];
+  const PROXIES=['https://corsproxy.io/?'+encodeURIComponent(SHEET_CSV_URL),'https://thingproxy.freeboard.io/fetch/'+SHEET_CSV_URL,SHEET_CSV_URL];
   let text='';
   try{
     for(const proxy of PROXIES){try{const res=await fetch(proxy,{cache:'no-store'});if(res.ok){text=await res.text();break;}}catch(e){continue;}}
