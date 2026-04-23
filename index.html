@@ -160,20 +160,11 @@ table.status-tbl tr:hover td{background:var(--surface2)}
   </nav>
   <div class="sidebar-bottom">
     <div class="date-label" id="updated-date">업데이트 주기: 매일</div>
-    <button class="edit-btn" id="editToggle" onclick="toggleEdit()">데이터 수정</button>
+    <div style="font-size:10px;color:rgba(255,255,255,.25);padding:0 5px">만든이: <span style="color:rgba(255,255,255,.4);font-weight:600">임미정</span> (플랫폼마케팅 Cell)</div>
   </div>
 </div>
 
 <div class="main">
-  <div class="edit-panel" id="editPanel">
-    <div class="edit-panel-title">비밀번호 확인 후 수정 가능합니다</div>
-    <div class="edit-section-label">프로모션 유형 정보</div>
-    <div class="edit-scroll"><table class="edit-tbl"><thead><tr><th>색상</th><th>태그</th><th>이름</th><th>설명</th></tr></thead><tbody id="promoTypeBody"></tbody></table></div>
-    <hr class="divider">
-    <div class="edit-section-label">운영 지표 데이터</div>
-    <div class="edit-scroll"><table class="edit-tbl"><thead><tr><th>기수명</th><th>운영기간</th><th>신청</th><th>실참여</th><th>취소</th><th>학생</th><th>중간%</th><th>최종%</th><th>초등수학</th><th>초등영어</th><th>중학수학</th><th>중학영어</th><th>중학정보</th><th>고등수학</th><th>고등영어</th><th>고등정보</th><th>초등%</th><th>중학%</th><th>고등%</th></tr></thead><tbody id="dataBody"></tbody></table></div>
-    <button class="apply-btn" onclick="applyEdit()">적용</button>
-  </div>
 
   <!-- 운영 프로세스 -->
   <div class="page active" id="page-process">
