@@ -268,6 +268,21 @@ table.status-tbl tr:hover td{background:var(--surface2)}
     <div class="page-header"><h1>신청 현황</h1><p>프로모션 유형별 신청·실참여·취소 현황</p></div>
     <div class="tabs" id="applyTabBar" style="display:flex;flex-direction:column;gap:0;margin-bottom:20px"></div>
     <div class="kpi-grid" id="applyKpi"></div>
+    <div class="charts-row" style="margin-bottom:14px">
+      <div class="chart-card" style="grid-column:1/-1">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <div class="chart-title">AI 선도·중점학교 신청 비율</div>
+            <div class="chart-sub">신청 학교 중 AI 디지털활용 선도학교 / AI 중점학교 비율</div>
+          </div>
+          <div id="aiSchoolSummary" style="display:flex;gap:10px"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center">
+          <div style="position:relative;height:160px"><canvas id="aiSchoolChart"></canvas></div>
+          <div id="aiSchoolLegend" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+    </div>
     <div class="charts-row">
       <div class="chart-card">
         <div class="chart-title">신청 · 실참여 · 취소</div>
@@ -700,7 +715,56 @@ function renderApply(){
   buildTabBar('applyTabBar',curApplyTab,'setApplyTab');
   const rows=getRows(curApplyTab);
   renderKpi('applyKpi',rows,'apply');
-  dc('ac1');dc('ac2');dc('ac3');dc('ac4');
+  dc('ac1');dc('ac2');dc('ac3');dc('ac4');dc('aisc');
+
+  // AI 선도·중점학교 비율 차트 (schools 탭 데이터 기반)
+  const applySchoolNames=new Set(rows.flatMap(d=>[])); // 신청 학교명은 schoolsData에서
+  const aiSeondoCount=schoolsData.filter(d=>{
+    const label=getSchoolLabel(d.region,d.school);
+    return label==='AI선도';
+  }).length;
+  const aiJungjeomCount=schoolsData.filter(d=>{
+    const label=getSchoolLabel(d.region,d.school);
+    return label==='AI중점';
+  }).length;
+  const totalSchools=schoolsData.length;
+  const otherCount=Math.max(0,totalSchools-aiSeondoCount-aiJungjeomCount);
+
+  const aiLabels=['AI 선도학교','AI 중점학교','일반학교'];
+  const aiValues=[aiSeondoCount,aiJungjeomCount,otherCount];
+  const aiColors=['#7C3AED','#F59E0B','#E2E8F0'];
+
+  const summary=document.getElementById('aiSchoolSummary');
+  if(summary) summary.innerHTML=
+    `<div style="text-align:center;padding:8px 16px;background:#EDE7F6;border-radius:10px">
+      <div style="font-size:10px;color:#7C3AED;font-weight:600">AI 선도학교</div>
+      <div style="font-size:20px;font-weight:700;color:#7C3AED">${aiSeondoCount}<span style="font-size:11px">개교</span></div>
+      <div style="font-size:10px;color:#7C3AED">${totalSchools>0?Math.round(aiSeondoCount/totalSchools*100):0}%</div>
+    </div>
+    <div style="text-align:center;padding:8px 16px;background:#FFF3E0;border-radius:10px">
+      <div style="font-size:10px;color:#F59E0B;font-weight:600">AI 중점학교</div>
+      <div style="font-size:20px;font-weight:700;color:#F59E0B">${aiJungjeomCount}<span style="font-size:11px">개교</span></div>
+      <div style="font-size:10px;color:#F59E0B">${totalSchools>0?Math.round(aiJungjeomCount/totalSchools*100):0}%</div>
+    </div>`;
+
+  const legend=document.getElementById('aiSchoolLegend');
+  if(legend) legend.innerHTML=aiLabels.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:10px;height:10px;border-radius:2px;background:${aiColors[i]};flex-shrink:0"></div>
+      <div style="flex:1;font-size:12px;color:var(--text2)">${l}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text1)">${aiValues[i]}개교</div>
+      <div style="font-size:11px;color:var(--text3);min-width:36px;text-align:right">${totalSchools>0?Math.round(aiValues[i]/totalSchools*100):0}%</div>
+    </div>`).join('');
+
+  if(document.getElementById('aiSchoolChart')) {
+    charts.aisc=new Chart(document.getElementById('aiSchoolChart'),{type:'doughnut',
+      data:{labels:aiLabels,datasets:[{data:aiValues,backgroundColor:aiColors,borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed}개교 (${totalSchools>0?Math.round(ctx.parsed/totalSchools*100):0}%)`}},
+          datalabels:{display:false}}}
+    });
+  }
   // 차트용 rows - 정기 여러 기수는 첫번째만
   const regularR=rows.filter(d=>d.type==='regular');
   const chartRows=regularR.length>1
