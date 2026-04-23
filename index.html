@@ -335,7 +335,7 @@ table.status-tbl tr:hover td{background:var(--surface2)}
     </div>
     <div class="status-table-wrap">
       <div style="overflow-x:auto" id="usageTableWrap">
-        <div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">데이터 불러오는 중...</div>
+        <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px"><div style="font-size:20px;margin-bottom:8px">⏳</div>데이터 불러오는 중...<br><span style="font-size:11px">학교 목록 → 사용 현황 순으로 로드해요</span></div>
       </div>
     </div>
   </div>
@@ -980,6 +980,24 @@ function renderMission(){
       <td><div class="pct-bar-wrap"><div class="pct-bar-track"><div class="pct-bar-fill" style="width:${d.fin}%;background:#D85A30"></div></div>${d.fin>0?d.fin+'%':'–'}</div></td>
       <td>${d.key==='budget_1'?'후기·설문·인터뷰':'수업 후기·설문'}</td>
       <td><span class="badge ${bc}">${s}</span></td></tr>`;}).join('')+`</tbody>`;
+}
+
+async function loadSchoolsData(){
+  if(schoolsData.length>0) return; // 이미 로드된 경우 스킵
+  const res=await fetch(APPS_SCRIPT_URL+'?sheet=schools',{cache:'no-store'});
+  const json=await res.json();
+  schoolsData=json.map(row=>({
+    region:row['region']||row['지역(교육청)']||'',
+    school:row['school']||row['학교명']||'',
+    subject:row['subject']||row['과목']||'',
+    grade:row['grade']||row['학년']||'',
+    teachers:row['teachers']||row['선생님수']||'',
+    students:row['students']||row['학생수']||'',
+    promo:row['promo']||row['프로모션명']||'',
+    mid_survey:row['mid_survey']||row['중간설문']||'',
+    mid_review:row['mid_review']||row['중간후기']||'',
+    note:row['note']||row['비고']||'',
+  })).filter(d=>d.school);
 }
 
 async function loadSchools(){
