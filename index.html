@@ -796,7 +796,33 @@ function renderApply(){
 
 function setUsageTab(tab){curUsageTab=tab;renderUsage();}
 function renderUsage(){
-  buildTabBar('usageTabBar',curUsageTab,'setUsageTab');
+  // 사용 현황은 3개월 무료체험 탭만 표시
+  const usageTabs=[
+    {key:'all',label:'전체',color:'#0F172A'},
+    {key:'3mo',label:'3개월 무료체험',color:'#6366F1'},
+  ];
+  const el=document.getElementById('usageTabBar');
+  if(!el) return;
+  const is3mo=curUsageTab==='3mo'||curUsageTab==='regular'||curUsageTab==='spot';
+  let mainHtml='<div style="display:flex;flex-direction:row;gap:6px;flex-wrap:wrap">';
+  usageTabs.forEach(t=>{
+    const isActive=t.key===curUsageTab||(is3mo&&t.key==='3mo');
+    const style=isActive?'background:'+t.color+';color:#fff;border-color:'+t.color+';box-shadow:0 4px 12px '+t.color+'40':'';
+    mainHtml+=`<button class="tab${isActive?' active':''}" style="${style}" onclick="setUsageTab('${t.key}')">${t.label}</button>`;
+  });
+  mainHtml+='</div>';
+  let subHtml='';
+  if(is3mo){
+    subHtml='<div style="display:flex;gap:6px;margin-top:6px;padding-left:52px;align-items:center">';
+    subHtml+='<span style="font-size:10px;color:#818CF8;font-weight:600;margin-right:2px">└</span>';
+    SUB_TABS_3MO.forEach(t=>{
+      const isActive2=t.key===curUsageTab;
+      const s=isActive2?'background:#6366F1;color:#fff;border-color:#6366F1':'background:#EEF2FF;color:#6366F1;border-color:#C7D2FE';
+      subHtml+=`<button style="font-size:11px;font-weight:600;padding:5px 16px;border-radius:99px;border:1.5px solid;cursor:pointer;font-family:inherit;transition:all .15s;${s}" onclick="setUsageTab('${t.key}')">${t.label}</button>`;
+    });
+    subHtml+='</div>';
+  }
+  el.innerHTML=mainHtml+subHtml;
   renderUsageTable();
 }
 
@@ -887,8 +913,6 @@ function renderUsageCharts(data){
       chartData=[
         {label:'정기',used:regularSchools.size,apply:ALL_DATA.find(d=>d.key==='regular_1')?.apply||0,color:'#6366F1'},
         {label:'비정기',used:spotSchools.size,apply:ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+d.apply,0),color:'#818CF8'},
-        {label:'서책 1년',used:bookSchools.size,apply:ALL_DATA.find(d=>d.key==='book_1')?.apply||0,color:'#10B981'},
-        {label:'예산지원',used:budgetSchools.size,apply:ALL_DATA.find(d=>d.key==='budget_1')?.apply||0,color:'#F59E0B'},
       ];
     } else {
       chartData=[
