@@ -803,6 +803,8 @@ function renderUsage(){
 async function loadUsageSchools(){
   if(usageSchoolsData.length>0){renderUsageTable();return;}
   try{
+    // schools 데이터 없으면 먼저 로드 (프로모션 자동 매칭용)
+    if(schoolsData.length===0) await loadSchoolsData();
     const res=await fetch(APPS_SCRIPT_URL+'?sheet=usage',{cache:'no-store'});
     const json=await res.json();
     usageSchoolsData=json.map(row=>{
