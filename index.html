@@ -392,11 +392,11 @@ function getSchoolLabel(region, school){
   const r=Object.keys(regionMap).find(k=>region.includes(k))||region;
   if(AI_JUNGJEOM.some(([edu,name])=>{
     const e=Object.keys(regionMap).find(k=>edu.includes(k))||edu;
-    return e===r && name===school;
+    return e===r&&name===school.trim();
   })) return 'AI중점';
   if(AI_SEONDO.some(([edu,name])=>{
     const e=Object.keys(regionMap).find(k=>edu.includes(k))||edu;
-    return e===r && name===school;
+    return e===r&&name===school.trim();
   })) return 'AI선도';
   return '';
 }
@@ -986,10 +986,9 @@ function filterSchools(){
     :filtered.map(d=>{
       const sb=d.mid_survey==='O'||d.mid_survey==='제출'?`<span class="badge badge-green">제출</span>`:d.mid_survey?`<span class="badge badge-amber">미제출</span>`:`<span style="color:var(--text3)">-</span>`;
       const rb=d.mid_review==='O'||d.mid_review==='제출'?`<span class="badge badge-green">제출</span>`:d.mid_review?`<span class="badge badge-amber">미제출</span>`:`<span style="color:var(--text3)">-</span>`;
-      const isFocus=AI_FOCUS_SCHOOLS.has(d.school);
-      const isDigital=AI_DIGITAL_SCHOOLS.has(d.school);
-      const focusBadge=isFocus?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#FEF3C7;color:#D97706;margin-left:4px">AI중점</span>`:'';
-      const digitalBadge=isDigital?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#EDE9FE;color:#7C3AED;margin-left:4px">AI선도</span>`:'';
+      const _label=getSchoolLabel(d.region,d.school);
+      const focusBadge=_label==='AI중점'?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#FFF3E0;color:#F59E0B;margin-left:4px">AI중점</span>`:'';
+      const digitalBadge=_label==='AI선도'?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#EDE7F6;color:#7C3AED;margin-left:4px">AI선도</span>`:'';
       return`<tr><td style="color:var(--text2);font-size:12px">${d.region}</td><td style="font-weight:600">${d.school}${focusBadge}${digitalBadge}</td><td>${d.subject}</td><td>${d.grade}</td><td style="text-align:center">${d.teachers}</td><td style="text-align:center">${d.students}</td><td><span style="font-size:11px;background:#EEF2FF;color:#6366F1;padding:3px 8px;border-radius:99px;font-weight:600">${d.promo}</span></td><td style="text-align:center">${sb}</td><td style="text-align:center">${rb}</td><td style="color:var(--text3);font-size:12px">${d.note}</td></tr>`;
     }).join('');
 }
