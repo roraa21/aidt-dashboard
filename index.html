@@ -308,6 +308,27 @@ table.status-tbl tr:hover td{background:var(--surface2)}
       <div class="status-table-head">프로모션별 상세</div>
       <table class="status-tbl" id="applyTable"></table>
     </div>
+
+    <!-- 이슈/메모 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:20px 24px;margin-top:14px;box-shadow:var(--shadow)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <div style="width:28px;height:28px;background:#0F172A;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">📝</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text1)">이슈 · 메모</div>
+          <div style="font-size:11px;color:var(--text3)">운영 중 발생한 이슈나 메모를 기록해요</div>
+        </div>
+      </div>
+      <!-- 작성 폼 -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <input type="text" id="memoAuthor" placeholder="작성자 이름" style="padding:8px 14px;border-radius:99px;border:1.5px solid var(--border);font-size:12px;font-family:inherit;background:var(--surface);color:var(--text1);outline:none;width:130px">
+        <input type="text" id="memoContent" placeholder="이슈 내용을 입력해주세요" style="flex:1;min-width:200px;padding:8px 14px;border-radius:99px;border:1.5px solid var(--border);font-size:12px;font-family:inherit;background:var(--surface);color:var(--text1);outline:none">
+        <button onclick="addMemo()" style="padding:8px 18px;border-radius:99px;border:none;background:#0F172A;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">등록</button>
+      </div>
+      <!-- 메모 목록 -->
+      <div id="memoList" style="display:flex;flex-direction:column;gap:8px">
+        <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">불러오는 중...</div>
+      </div>
+    </div>
   </div>
 
   <!-- 사용 현황 -->
@@ -336,6 +357,25 @@ table.status-tbl tr:hover td{background:var(--surface2)}
     <div class="status-table-wrap">
       <div style="overflow-x:auto" id="usageTableWrap">
         <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px"><div style="font-size:20px;margin-bottom:8px">⏳</div>데이터 불러오는 중...<br><span style="font-size:11px">학교 목록 → 사용 현황 순으로 로드해요</span></div>
+      </div>
+    </div>
+
+    <!-- 이슈/메모 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:20px 24px;margin-top:14px;box-shadow:var(--shadow)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <div style="width:28px;height:28px;background:#0F172A;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">📝</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text1)">이슈 · 메모</div>
+          <div style="font-size:11px;color:var(--text3)">운영 중 발생한 이슈나 메모를 기록해요</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <input type="text" id="memoAuthorUsage" placeholder="작성자 이름" style="padding:8px 14px;border-radius:99px;border:1.5px solid var(--border);font-size:12px;font-family:inherit;background:var(--surface);color:var(--text1);outline:none;width:130px">
+        <input type="text" id="memoContentUsage" placeholder="이슈 내용을 입력해주세요" style="flex:1;min-width:200px;padding:8px 14px;border-radius:99px;border:1.5px solid var(--border);font-size:12px;font-family:inherit;background:var(--surface);color:var(--text1);outline:none">
+        <button onclick="addMemoUsage()" style="padding:8px 18px;border-radius:99px;border:none;background:#0F172A;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">등록</button>
+      </div>
+      <div id="memoListUsage" style="display:flex;flex-direction:column;gap:8px">
+        <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">불러오는 중...</div>
       </div>
     </div>
   </div>
@@ -492,8 +532,10 @@ function goPage(page){
   if(page==='usage'){
     renderUsage();
     loadUsageSchools();
+    loadMemosUsage();
   }
   if(page==='mission') renderMission();
+  loadMemos();
   if(page==='schools') loadSchools();
 }
 
@@ -1140,7 +1182,97 @@ function filterSchools(){
     }).join('');
 }
 
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbz6k640hk3vsNJuDKat47APUei9De9Fw8VamBsusterrc-P8UpvzfTZsgcyesWYsc74/exec';
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxvdIb1EsZE0Md5g0JSlFJ47Jsbruk6OAW98FNs3-vhO3kAKBxKHTEgKSd2DdIl3or8/exec';
+
+function addMemoUsage(){
+  const author=document.getElementById('memoAuthorUsage').value.trim();
+  const content=document.getElementById('memoContentUsage').value.trim();
+  if(!author){alert('작성자 이름을 입력해주세요!');return;}
+  if(!content){alert('내용을 입력해주세요!');return;}
+  const now=new Date();
+  const date=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'add',date,author,page:'usage',content})})
+    .then(()=>{document.getElementById('memoContentUsage').value='';loadMemosUsage();})
+    .catch(e=>console.warn('메모 저장 실패:',e));
+}
+
+async function loadMemosUsage(){
+  const el=document.getElementById('memoListUsage');
+  if(!el)return;
+  try{
+    const res=await fetch(APPS_SCRIPT_URL+'?sheet=notes',{cache:'no-store'});
+    const json=await res.json();
+    const memos=json.filter(d=>d['page']==='usage').reverse();
+    if(memos.length===0){
+      el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">아직 등록된 메모가 없어요</div>';
+      return;
+    }
+    el.innerHTML=memos.map(d=>{
+      const date=d['date']||'';const author=d['author']||'';const content=d['content']||'';
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--surface2);border-radius:10px">'+
+        '<div style="flex:1">'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+            '<span style="font-size:12px;font-weight:700;color:var(--text1)">'+author+'</span>'+
+            '<span style="font-size:11px;color:var(--text3)">'+date+'</span>'+
+          '</div>'+
+          '<div style="font-size:13px;color:var(--text2);line-height:1.6">'+content+'</div>'+
+        '</div>'+
+        '<button data-date="'+date+'" data-author="'+author+'" onclick="deleteMemo(this.dataset.date,this.dataset.author)" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;flex-shrink:0">삭제</button>'+
+      '</div>';
+    }).join('');
+  }catch(e){
+    if(el) el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">메모를 불러올 수 없어요</div>';
+  }
+}
+
+function addMemo(){
+  const author=document.getElementById('memoAuthor').value.trim();
+  const content=document.getElementById('memoContent').value.trim();
+  if(!author){alert('작성자 이름을 입력해주세요!');return;}
+  if(!content){alert('내용을 입력해주세요!');return;}
+  const now=new Date();
+  const date=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const page=curPage;
+  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'add',date,author,page,content})})
+    .then(()=>{document.getElementById('memoContent').value='';loadMemos();})
+    .catch(e=>console.warn('메모 저장 실패:',e));
+}
+
+function deleteMemo(date,author){
+  if(!confirm('삭제할까요?'))return;
+  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'delete',date,author})})
+    .then(()=>loadMemos())
+    .catch(e=>console.warn('메모 삭제 실패:',e));
+}
+
+async function loadMemos(){
+  const el=document.getElementById('memoList');
+  if(!el)return;
+  try{
+    const res=await fetch(APPS_SCRIPT_URL+'?sheet=notes',{cache:'no-store'});
+    const json=await res.json();
+    const memos=json.filter(d=>d['page']===curPage||!d['page']).reverse();
+    if(memos.length===0){
+      el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">아직 등록된 메모가 없어요</div>';
+      return;
+    }
+    el.innerHTML=memos.map((d,idx)=>{
+      const date=d['date']||'';const author=d['author']||'';const content=d['content']||d['내용']||'';
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--surface2);border-radius:10px">'+
+        '<div style="flex:1">'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+            '<span style="font-size:12px;font-weight:700;color:var(--text1)">'+author+'</span>'+
+            '<span style="font-size:11px;color:var(--text3)">'+date+'</span>'+
+          '</div>'+
+          '<div style="font-size:13px;color:var(--text2);line-height:1.6">'+content+'</div>'+
+        '</div>'+
+        '<button data-date="'+date+'" data-author="'+author+'" onclick="deleteMemo(this.dataset.date,this.dataset.author)" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;flex-shrink:0">삭제</button>'+
+      '</div>';
+    }).join('');
+  }catch(e){
+    if(el) el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">메모를 불러올 수 없어요</div>';
+  }
+}
 
 async function loadFromSheet(){
   document.getElementById('updated-date').textContent='데이터 불러오는 중...';
@@ -1184,6 +1316,7 @@ async function loadFromSheet(){
 
 loadFromSheet();
 setInterval(()=>loadFromSheet(),10*60*1000);
+loadMemos();
 </script>
 </body>
 </html>
