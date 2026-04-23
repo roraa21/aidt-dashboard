@@ -1208,7 +1208,10 @@ async function loadMemosUsage(){
       return;
     }
     el.innerHTML=memos.map(d=>{
-      const date=d['date']||'';const author=d['author']||'';const content=d['content']||'';
+      const rawDate=d['date']||'';
+      const dateObj=new Date(rawDate);
+      const date=isNaN(dateObj)?rawDate:(dateObj.getFullYear()+'.'+String(dateObj.getMonth()+1).padStart(2,'0')+'.'+String(dateObj.getDate()).padStart(2,'0'));
+      const author=d['author']||'';const content=d['content']||'';
       return '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--surface2);border-radius:10px">'+
         '<div style="flex:1">'+
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
@@ -1257,7 +1260,10 @@ async function loadMemos(){
       return;
     }
     el.innerHTML=memos.map((d,idx)=>{
-      const date=d['date']||'';const author=d['author']||'';const content=d['content']||d['내용']||'';
+      const rawDate=d['date']||'';
+      const dateObj=new Date(rawDate);
+      const date=isNaN(dateObj)?rawDate:(dateObj.getFullYear()+'.'+String(dateObj.getMonth()+1).padStart(2,'0')+'.'+String(dateObj.getDate()).padStart(2,'0'));
+      const author=d['author']||'';const content=d['content']||d['내용']||'';
       return '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--surface2);border-radius:10px">'+
         '<div style="flex:1">'+
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
