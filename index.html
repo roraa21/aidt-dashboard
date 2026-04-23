@@ -479,12 +479,7 @@ function goPage(page){
   }
   if(page==='usage'){
     renderUsage();
-    // schools 데이터 먼저 로드 후 usage 로드
-    if(schoolsData.length===0){
-      loadSchools().then(()=>loadUsageSchools());
-    }else{
-      loadUsageSchools();
-    }
+    loadUsageSchools();
   }
   if(page==='mission') renderMission();
   if(page==='schools') loadSchools();
@@ -801,8 +796,9 @@ async function loadUsageSchools(){
     const json=await res.json();
     usageSchoolsData=json.map(row=>{
       const school=row['school']||row['학교명']||'';
-      const matched=schoolsData.find(s=>s.school===school);
-      const promo=matched?matched.promo:(row['promo']||row['프로모션']||'미분류');
+      // schools 탭에서 프로모션 매칭 (없으면 시트값 또는 미분류)
+      const matched=schoolsData.length>0?schoolsData.find(s=>s.school===school):null;
+      const promo=matched?matched.promo:(row['promo']||row['프로모션']||'');
       const teacher_access_raw=row['teacher_access']||row['교사_최근접속일시']||'';
       const student_access_raw=row['student_access']||row['학생_최근접속일시']||'';
       // ISO 날짜를 한국 시간으로 변환
