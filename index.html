@@ -713,15 +713,11 @@ function renderApply(){
 
   // AI 선도·중점학교 비율 차트 (schools 탭 데이터 기반)
   const applySchoolNames=new Set(rows.flatMap(d=>[])); // 신청 학교명은 schoolsData에서
-  const aiSeondoCount=schoolsData.filter(d=>{
-    const label=getSchoolLabel(d.region,d.school);
-    return label==='AI선도';
-  }).length;
-  const aiJungjeomCount=schoolsData.filter(d=>{
-    const label=getSchoolLabel(d.region,d.school);
-    return label==='AI중점';
-  }).length;
-  const totalSchools=schoolsData.length;
+  // 중복 제거 - 지역+학교명 기준 고유 학교만 카운트
+  const uniqueSchools=[...new Map(schoolsData.map(d=>[d.region+'_'+d.school,d])).values()];
+  const aiSeondoCount=uniqueSchools.filter(d=>getSchoolLabel(d.region,d.school)==='AI선도').length;
+  const aiJungjeomCount=uniqueSchools.filter(d=>getSchoolLabel(d.region,d.school)==='AI중점').length;
+  const totalSchools=uniqueSchools.length;
   const otherCount=Math.max(0,totalSchools-aiSeondoCount-aiJungjeomCount);
 
   const summary=document.getElementById('aiSchoolSummary');
