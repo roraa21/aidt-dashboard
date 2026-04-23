@@ -314,7 +314,6 @@ table.status-tbl tr:hover td{background:var(--surface2)}
   <div class="page" id="page-usage">
     <div class="page-header"><h1>사용 현황</h1><p>AIDT 실제 활용 및 참여 현황</p></div>
     <div class="tabs" id="usageTabBar" style="display:flex;flex-direction:column;gap:0;margin-bottom:20px"></div>
-    <div class="kpi-grid" id="usageKpi"></div>
     <div class="charts-row" id="usageChartsRow" style="display:none">
       <div class="chart-card">
         <div class="chart-title">프로모션별 접속 학교 비율</div>
@@ -798,7 +797,6 @@ function renderApply(){
 function setUsageTab(tab){curUsageTab=tab;renderUsage();}
 function renderUsage(){
   buildTabBar('usageTabBar',curUsageTab,'setUsageTab');
-  renderKpi('usageKpi',getRows(curUsageTab),'usage');
   renderUsageTable();
 }
 
@@ -910,7 +908,11 @@ function renderUsageTable(){
   }
 
   // 주차 목록
-  const weeks=[...new Set(filtered.map(d=>d.week).filter(Boolean))];
+  const weeks=[...new Set(filtered.map(d=>d.week).filter(Boolean))].sort((a,b)=>{
+    // '4/14~4/20' 형식에서 시작일 기준 내림차순 정렬
+    const getDate=w=>{const m=w.match(/(\d+)\/(\d+)/);return m?parseInt(m[1])*100+parseInt(m[2]):0;};
+    return getDate(b)-getDate(a);
+  });
   const weekFilter=document.getElementById('usageWeekFilter')?.value||'';
   const display=weekFilter?filtered.filter(d=>d.week===weekFilter):filtered;
 
