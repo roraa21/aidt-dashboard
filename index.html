@@ -752,15 +752,28 @@ function renderMission(){
 
 async function loadSchools(){
   if(schoolsData.length>0){renderSchools();return;}
-  const PROXIES=['https://corsproxy.io/?'+encodeURIComponent(SCHOOLS_CSV_URL),'https://thingproxy.freeboard.io/fetch/'+SCHOOLS_CSV_URL,SCHOOLS_CSV_URL];
-  let text='';
-  for(const proxy of PROXIES){try{const res=await fetch(proxy,{cache:'no-store'});if(res.ok){text=await res.text();break;}}catch(e){continue;}}
-  if(!text){document.getElementById('schoolsBody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">데이터를 불러올 수 없습니다</td></tr>';return;}
-  schoolsData=text.trim().split('\n').slice(1).map(row=>{
-    const c=row.split(',').map(v=>v.trim().replace(/^"|"$/g,''));
-    return{region:c[0]||'',school:c[1]||'',subject:c[2]||'',grade:c[3]||'',teachers:c[4]||'',students:c[5]||'',promo:c[6]||'',mid_survey:c[7]||'',mid_review:c[8]||'',note:c[9]||''};
-  }).filter(d=>d.school);
-  renderSchools();
+  try{
+    const res=await fetch(APPS_SCRIPT_URL+'?sheet=schools',{cache:'no-store'});
+    const json=await res.json();
+    schoolsData=json.map(row=>{
+      return{
+        region:row['region']||row['지역(교육청)']||'',
+        school:row['school']||row['학교명']||'',
+        subject:row['subject']||row['과목']||'',
+        grade:row['grade']||row['학년']||'',
+        teachers:row['teachers']||row['선생님수']||'',
+        students:row['students']||row['학생수']||'',
+        promo:row['promo']||row['프로모션명']||'',
+        mid_survey:row['mid_survey']||row['중간설문']||'',
+        mid_review:row['mid_review']||row['중간후기']||'',
+        note:row['note']||row['비고']||'',
+      };
+    }).filter(d=>d.school);
+    renderSchools();
+  }catch(e){
+    console.warn('학교 데이터 로드 실패:',e);
+    document.getElementById('schoolsBody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">데이터를 불러올 수 없습니다</td></tr>';
+  }
 }
 function renderSchools(){
   const rSel=document.getElementById('schoolRegionFilter');
@@ -797,22 +810,40 @@ function filterSchools(){
     }).join('');
 }
 
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbz6k640hk3vsNJuDKat47APUei9De9Fw8VamBsusterrc-P8UpvzfTZsgcyesWYsc74/exec';
+
 async function loadFromSheet(){
   document.getElementById('updated-date').textContent='데이터 불러오는 중...';
-  const PROXIES=['https://corsproxy.io/?'+encodeURIComponent(SHEET_CSV_URL),'https://thingproxy.freeboard.io/fetch/'+SHEET_CSV_URL,SHEET_CSV_URL];
-  let text='';
   try{
-    for(const proxy of PROXIES){try{const res=await fetch(proxy,{cache:'no-store'});if(res.ok){text=await res.text();break;}}catch(e){continue;}}
-    if(text){
-      text.trim().split('\n').slice(1).forEach(row=>{
-        const c=parseCSVRow(row);
-        const[key,name,apply,actual,cancel,student,mid,fin,e_math,e_eng,m_math,m_eng,m_info,h_math,h_eng,h_info,elem,mid2,high,period]=c;
-        const d=ALL_DATA.find(r=>r.key===key);
-        if(!d) return;
-        Object.assign(d,{apply:nv(apply),actual:nv(actual),cancel:nv(cancel),student:nv(student),mid:nv(mid),fin:nv(fin),e_math:nv(e_math),e_eng:nv(e_eng),m_math:nv(m_math),m_eng:nv(m_eng),m_info:nv(m_info),h_math:nv(h_math),h_eng:nv(h_eng),h_info:nv(h_info),elem:nv(elem),mid2:nv(mid2),high:nv(high),period:period||d.period,name:name||d.name});
+    const res=await fetch(APPS_SCRIPT_URL+'?sheet=AIDT_시트_템플릿',{cache:'no-store'});
+    const json=await res.json();
+    json.forEach(row=>{
+      const key=row['key']||row['구분키']||'';
+      const d=ALL_DATA.find(r=>r.key===key);
+      if(!d) return;
+      Object.assign(d,{
+        apply:nv(row['apply']||row['신청']),
+        actual:nv(row['actual']||row['실참여']),
+        cancel:nv(row['cancel']||row['취소']),
+        student:nv(row['student']||row['학생수']),
+        mid:nv(row['mid']||row['중간제출률']),
+        fin:nv(row['fin']||row['최종제출률']),
+        e_math:nv(row['e_math']||row['초등수학']),
+        e_eng:nv(row['e_eng']||row['초등영어']),
+        m_math:nv(row['m_math']||row['중학수학']),
+        m_eng:nv(row['m_eng']||row['중학영어']),
+        m_info:nv(row['m_info']||row['중학정보']),
+        h_math:nv(row['h_math']||row['고등수학']),
+        h_eng:nv(row['h_eng']||row['고등영어']),
+        h_info:nv(row['h_info']||row['고등정보']),
+        elem:nv(row['elem']||row['초등비율']),
+        mid2:nv(row['mid2']||row['중학비율']),
+        high:nv(row['high']||row['고등비율']),
+        period:row['period']||row['운영기간']||d.period,
+        name:row['name']||row['기수명']||d.name,
       });
-      document.getElementById('updated-date').textContent='업데이트 주기: 매일 · '+new Date().toLocaleDateString('ko-KR');
-    }
+    });
+    document.getElementById('updated-date').textContent='업데이트 주기: 매일 · '+new Date().toLocaleDateString('ko-KR');
   }catch(e){
     console.warn('시트 로드 실패:',e);
     document.getElementById('updated-date').textContent='업데이트 주기: 매일';
