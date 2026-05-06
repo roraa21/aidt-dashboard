@@ -131,6 +131,7 @@ table.status-tbl tr:hover td{background:var(--surface2)}
 </style>
 </head>
 <body>
+
 <div class="sidebar">
   <div class="sidebar-logo">
     <p>비상교육</p>
@@ -326,7 +327,12 @@ table.status-tbl tr:hover td{background:var(--surface2)}
   <div class="page" id="page-usage">
     <div class="page-header"><h1>사용 현황</h1><p>AIDT 실제 활용 및 참여 현황</p></div>
     <div class="tabs" id="usageTabBar" style="display:flex;flex-direction:column;gap:0;margin-bottom:20px"></div>
-    <div class="charts-row" id="usageChartsRow" style="display:none">
+
+    <!-- KPI -->
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)" id="usageKpiNew"></div>
+
+    <!-- 차트 행 1: 신청대비사용 + 학생수 -->
+    <div class="charts-row" id="usageChartsRow" style="display:none;margin-bottom:14px">
       <div class="chart-card">
         <div class="chart-title">신청 대비 사용 학교 비율</div>
         <div class="chart-sub">신청 학교 중 실제 접속한 학교 비율</div>
@@ -339,15 +345,38 @@ table.status-tbl tr:hover td{background:var(--surface2)}
         <div style="position:relative;height:195px"><canvas id="usageBarChart"></canvas></div>
       </div>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700;color:var(--text1)">학교별 사용 현황</div>
-      <select class="search-select" id="usageWeekFilter" onchange="renderUsageTable()" style="min-width:120px">
-        <option value="">전체 주차</option>
-      </select>
+
+    <!-- 차트 행 2: 총접속시간 + 스스로학습 -->
+    <div class="charts-row" id="usageChartsRow2" style="display:none;margin-bottom:14px">
+      <div class="chart-card">
+        <div class="chart-title">학교별 총 접속 시간</div>
+        <div class="chart-sub">교사 기준 누적 접속 시간 (분)</div>
+        <div style="position:relative;height:195px"><canvas id="usageTimeChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">스스로 학습 생성 건수</div>
+        <div class="chart-sub">학생이 스스로 생성한 학습 현황</div>
+        <div style="position:relative;height:195px"><canvas id="usageStudyChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 필터 + 테이블 -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--text1)">학교별 상세 현황</div>
+      <div style="display:flex;gap:8px">
+        <select class="search-select" id="usageSubjectFilter" onchange="renderUsageTable()" style="min-width:100px">
+          <option value="">전체 과목</option>
+          <option value="수학">수학</option>
+          <option value="영어">영어</option>
+        </select>
+        <select class="search-select" id="usageWeekFilter" onchange="renderUsageTable()" style="min-width:120px">
+          <option value="">전체 주차</option>
+        </select>
+      </div>
     </div>
     <div class="status-table-wrap">
       <div style="overflow-x:auto" id="usageTableWrap">
-        <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px"><div style="font-size:20px;margin-bottom:8px">⏳</div>데이터 불러오는 중...<br><span style="font-size:11px">학교 목록 → 사용 현황 순으로 로드해요</span></div>
+        <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px"><div style="font-size:20px;margin-bottom:8px">⏳</div>데이터 불러오는 중...</div>
       </div>
     </div>
 
@@ -868,11 +897,14 @@ async function loadUsageSchools(){
     const json=await res.json();
     usageSchoolsData=json.map(row=>{
       const school=row['school']||row['학교명']||'';
-      // schools 탭에서 프로모션 매칭 (없으면 시트값 또는 미분류)
       const matched=schoolsData.length>0?schoolsData.find(s=>s.school===school):null;
       const promo=matched?matched.promo:(row['promo']||row['프로모션']||'');
-      const teacher_access_raw=row['teacher_access']||row['교사_최근접속일시']||'';
-      const student_access_raw=row['student_access']||row['학생_최근접속일시']||'';
+      const subject=row['subject']||row['과목']||'';
+      const last_progress=row['last_progress']||row['마지막학습진도']||'';
+      const access_time=row['access_time']||row['총접속시간']||'';
+      const study_gen=parseInt(row['study_gen']||row['학습생성건수'])||0;
+      const teacher_access_raw=row['teacher_access']||row['교사최근접속일']||row['교사_최근접속일시']||'';
+      const student_access_raw=row['student_access']||row['학생최근접속일']||row['학생_최근접속일시']||'';
       // ISO 날짜를 한국 시간으로 변환
       const fmtDate=iso=>{
         if(!iso) return '';
@@ -897,8 +929,8 @@ async function loadUsageSchools(){
         }
       }
       return {
-        school,promo,
-        total:parseInt(row['total']||row['전체_사용자수'])||0,
+        school,promo,subject,last_progress,access_time,study_gen,
+        total:parseInt(row['total']||row['전체사용자']||row['전체_사용자수'])||0,
         teachers:parseInt(row['teachers']||row['교사수'])||0,
         students:parseInt(row['students']||row['학생수'])||0,
         teacher_access,student_access,week,
@@ -1000,63 +1032,108 @@ function renderUsageTable(){
   const el=document.getElementById('usageTableWrap');
   if(!el) return;
 
-  // 현재 탭 기준 프로모션 필터
   const tab=curUsageTab;
+  const subjectFilter=document.getElementById('usageSubjectFilter')?.value||'';
   let filtered=usageSchoolsData;
   if(tab!=='all'){
-    if(tab==='3mo') filtered=usageSchoolsData.filter(d=>d.promo.includes('무료체험')||d.promo.includes('지식샘터')||d.promo.includes('충남'));
-    else if(tab==='regular') filtered=usageSchoolsData.filter(d=>d.promo.includes('무료체험')&&!d.promo.includes('지식샘터'));
-    else if(tab==='spot') filtered=usageSchoolsData.filter(d=>d.promo.includes('지식샘터')||d.promo.includes('충남'));
-    else if(tab==='book') filtered=usageSchoolsData.filter(d=>d.promo.includes('서책')||d.promo.includes('1년'));
-    else if(tab==='budget') filtered=usageSchoolsData.filter(d=>d.promo.includes('예산'));
+    if(tab==='3mo') filtered=filtered.filter(d=>d.promo&&(d.promo.includes('무료체험')||d.promo.includes('지식샘터')||d.promo.includes('충남')));
+    else if(tab==='regular') filtered=filtered.filter(d=>d.promo&&d.promo.includes('무료체험')&&!d.promo.includes('지식샘터'));
+    else if(tab==='spot') filtered=filtered.filter(d=>d.promo&&(d.promo.includes('지식샘터')||d.promo.includes('충남')));
+    else if(tab==='book') filtered=filtered.filter(d=>d.promo&&(d.promo.includes('서책')||d.promo.includes('1년')));
+    else if(tab==='budget') filtered=filtered.filter(d=>d.promo&&d.promo.includes('예산'));
   }
-
-  if(filtered.length===0){
-    el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">사용 현황 데이터가 없습니다<br><span style="font-size:11px">구글 시트 usage 탭에 데이터를 입력해주세요</span></div>';
-    return;
-  }
-
-  // 주차 목록
-  const weeks=[...new Set(filtered.map(d=>d.week).filter(Boolean))].sort((a,b)=>{
-    // '4/14~4/20' 형식에서 시작일 기준 내림차순 정렬
-    const getDate=w=>{const m=w.match(/(\d+)\/(\d+)/);return m?parseInt(m[1])*100+parseInt(m[2]):0;};
-    return getDate(b)-getDate(a);
-  });
-  const weekFilter=document.getElementById('usageWeekFilter')?.value||'';
-  const display=weekFilter?filtered.filter(d=>d.week===weekFilter):filtered;
+  if(subjectFilter) filtered=filtered.filter(d=>d.subject===subjectFilter);
 
   // 차트 렌더링
   renderUsageCharts(filtered);
 
-  // 주차 필터 드롭다운 업데이트
+  // 접속시간 분으로 변환 함수
+  const toMin=t=>{if(!t)return 0;const p=t.split(':');return parseInt(p[0]||0)*60+parseInt(p[1]||0);};
+
+  // 접속시간/스스로학습 차트
+  const row2=document.getElementById('usageChartsRow2');
+  if(row2&&filtered.length>0){
+    row2.style.display='grid';
+    // 학교별 합산
+    const schoolMap={};
+    filtered.forEach(d=>{
+      if(!schoolMap[d.school]) schoolMap[d.school]={time:0,study:0};
+      schoolMap[d.school].time+=toMin(d.access_time);
+      schoolMap[d.school].study+=d.study_gen||0;
+    });
+    const schools=Object.keys(schoolMap).filter(s=>schoolMap[s].time>0||schoolMap[s].study>0);
+    const times=schools.map(s=>schoolMap[s].time);
+    const studies=schools.map(s=>schoolMap[s].study);
+    const colors=['#6366F1','#818CF8','#0EA5E9','#10B981','#F59E0B','#F87171'];
+
+    dc('utc');
+    charts.utc=new Chart(document.getElementById('usageTimeChart'),{type:'bar',
+      data:{labels:schools,datasets:[{label:'접속시간(분)',data:times,backgroundColor:schools.map((_,i)=>colors[i%colors.length]),borderRadius:5,barPercentage:.6}]},
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+        plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',font:{size:9,weight:'600'},formatter:v=>v>0?v+'분':'',color:'#475569'}},
+        scales:{x:{ticks:{font:{size:9},autoSkip:false},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:'#f0f0ee'}}}}
+    });
+
+    dc('usc');
+    charts.usc=new Chart(document.getElementById('usageStudyChart'),{type:'bar',
+      data:{labels:schools,datasets:[{label:'학습생성건수',data:studies,backgroundColor:schools.map((_,i)=>colors[i%colors.length]),borderRadius:5,barPercentage:.6}]},
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+        plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',font:{size:9,weight:'600'},formatter:v=>v>0?v+'건':'',color:'#475569'}},
+        scales:{x:{ticks:{font:{size:9},autoSkip:false},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:'#f0f0ee'}}}}
+    });
+  }
+
+  // KPI
+  const totalSchools=new Set(filtered.map(d=>d.school)).size;
+  const totalStudyGen=filtered.reduce((s,d)=>s+(d.study_gen||0),0);
+  const totalMinutes=filtered.reduce((s,d)=>s+toMin(d.access_time),0);
+  const avgMin=totalSchools?Math.round(totalMinutes/totalSchools):0;
+  const kpiEl=document.getElementById('usageKpiNew');
+  if(kpiEl) kpiEl.innerHTML=
+    '<div class="kpi"><div class="kpi-label">접속 학교 수</div><div class="kpi-val" style="color:#6366F1">'+totalSchools+'<span style="font-size:14px">개교</span></div><div class="kpi-sub">실제 사용 학교</div></div>'+
+    '<div class="kpi"><div class="kpi-label">총 학생 수</div><div class="kpi-val" style="color:#0EA5E9">'+filtered.reduce((s,d)=>s+(d.students||0),0).toLocaleString()+'<span style="font-size:14px">명</span></div><div class="kpi-sub">참여 학생 합산</div></div>'+
+    '<div class="kpi"><div class="kpi-label">평균 접속 시간</div><div class="kpi-val" style="color:#10B981">'+avgMin+'<span style="font-size:14px">분</span></div><div class="kpi-sub">학교당 평균 (교사 기준)</div></div>'+
+    '<div class="kpi"><div class="kpi-label">스스로 학습 생성</div><div class="kpi-val" style="color:#F59E0B">'+totalStudyGen.toLocaleString()+'<span style="font-size:14px">건</span></div><div class="kpi-sub">학생 자기주도 학습</div></div>';
+
+  // 주차 필터
+  const weeks=[...new Set(filtered.map(d=>d.week).filter(Boolean))].sort((a,b)=>{
+    const g=w=>{const m=w.match(/(\d+)\/(\d+)/);return m?parseInt(m[1])*100+parseInt(m[2]):0;};
+    return g(b)-g(a);
+  });
   const wf=document.getElementById('usageWeekFilter');
   if(wf){
     const cur=wf.value;
-    wf.innerHTML='<option value="">전체 주차</option>'+weeks.map(w=>`<option value="${w}" ${w===cur?'selected':''}>${w}</option>`).join('');
+    wf.innerHTML='<option value="">전체 주차</option>'+weeks.map(w=>'<option value="'+w+'"'+(w===cur?' selected':'')+'>'+w+'</option>').join('');
+  }
+  const weekFilter=wf?.value||'';
+  const display=weekFilter?filtered.filter(d=>d.week===weekFilter):filtered;
+
+  if(display.length===0){
+    el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">데이터가 없습니다</div>';
+    return;
   }
 
-  el.innerHTML=`
-    <table class="status-tbl">
-      <thead><tr>
-        <th>학교명</th><th>프로모션</th><th>주차</th>
-        <th>전체 사용자</th><th>교사</th><th>학생</th><th>교사 최근 접속</th><th>학생 최근 접속</th>
-      </tr></thead>
-      <tbody>${display.map(d=>{
-        const label=getSchoolLabel('',d.school);
-        const badge=label==='AI중점'?`<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:99px;background:#FFF3E0;color:#F59E0B;margin-left:4px">AI중점</span>`:label==='AI선도'?`<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:99px;background:#EDE7F6;color:#7C3AED;margin-left:4px">AI선도</span>`:'';
-        const promoColor=d.promo.includes('무료체험')?'#6366F1':d.promo.includes('서책')||d.promo.includes('1년')?'#10B981':d.promo.includes('예산')?'#F59E0B':'#64748B';
-        return`<tr>
-          <td style="font-weight:600">${d.school}${badge}</td>
-          <td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:${promoColor}18;color:${promoColor}">${d.promo||'-'}</span></td>
-          <td style="color:var(--text3);font-size:12px">${d.week||'-'}</td>
-          <td style="text-align:center;font-weight:600">${d.total}</td>
-          <td style="text-align:center">${d.teachers}</td>
-          <td style="text-align:center">${d.students}</td>
-          <td style="color:var(--text3);font-size:12px">${d.teacher_access||'-'}</td>
-          <td style="color:var(--text3);font-size:12px">${d.student_access||'-'}</td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table>`;
+  el.innerHTML='<table class="status-tbl"><thead><tr>'+
+    '<th>학교명</th><th>과목</th><th>교사</th><th>학생</th>'+
+    '<th>교사 최근접속</th><th>학생 최근접속</th>'+
+    '<th>마지막 학습 진도</th><th>접속시간</th><th>스스로학습</th>'+
+    '</tr></thead><tbody>'+
+    display.map(d=>{
+      const label=getSchoolLabel('',d.school);
+      const badge=label==='AI중점'?'<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:99px;background:#FFF3E0;color:#F59E0B;margin-left:4px">AI중점</span>':label==='AI선도'?'<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:99px;background:#EDE7F6;color:#7C3AED;margin-left:4px">AI선도</span>':'';
+      const subColor=d.subject==='수학'?'#6366F1':d.subject==='영어'?'#10B981':'#64748B';
+      return '<tr>'+
+        '<td style="font-weight:600">'+d.school+badge+'</td>'+
+        '<td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:'+subColor+'18;color:'+subColor+'">'+d.subject+'</span></td>'+
+        '<td style="text-align:center">'+d.teachers+'</td>'+
+        '<td style="text-align:center">'+d.students+'</td>'+
+        '<td style="color:var(--text3);font-size:11px">'+d.teacher_access+'</td>'+
+        '<td style="color:var(--text3);font-size:11px">'+d.student_access+'</td>'+
+        '<td style="color:var(--text2);font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.last_progress+'">'+d.last_progress+'</td>'+
+        '<td style="text-align:center;font-size:12px">'+d.access_time+'</td>'+
+        '<td style="text-align:center;font-weight:600;color:#F59E0B">'+((d.study_gen||0)>0?d.study_gen+'건':'-')+'</td>'+
+      '</tr>';
+    }).join('')+'</tbody></table>';
 }
 
 function setMissionTab(tab){curMissionTab=tab;renderMission();}
@@ -1315,5 +1392,6 @@ loadFromSheet();
 setInterval(()=>loadFromSheet(),10*60*1000);
 loadMemos();
 </script>
+
 </body>
 </html>
