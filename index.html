@@ -901,7 +901,15 @@ async function loadUsageSchools(){
       const promo=matched?matched.promo:(row['promo']||row['프로모션']||'');
       const subject=row['subject']||row['과목']||'';
       const last_progress=row['last_progress']||row['마지막학습진도']||'';
-      const access_time=row['access_time']||row['총접속시간']||'';
+      // 1899-12-30T HH:MM:SS 형식 → HH:MM:SS 변환
+      let access_time=row['access_time']||row['총접속시간']||'';
+      if(access_time&&access_time.includes('1899-12-30T')){
+        const d=new Date(access_time);
+        const hh=String(d.getUTCHours()).padStart(2,'0');
+        const mm=String(d.getUTCMinutes()).padStart(2,'0');
+        const ss=String(d.getUTCSeconds()).padStart(2,'0');
+        access_time=hh+':'+mm+':'+ss;
+      }
       const study_gen=parseInt(row['study_gen']||row['학습생성건수'])||0;
       const teacher_access_raw=row['teacher_access']||row['교사최근접속일']||row['교사_최근접속일시']||'';
       const student_access_raw=row['student_access']||row['학생최근접속일']||row['학생_최근접속일시']||'';
