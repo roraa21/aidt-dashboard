@@ -435,39 +435,8 @@ table.status-tbl tr:hover td{background:var(--surface2)}
       <div class="status-table-head">📅 차수별 중간 점검 일정</div>
       <table class="status-tbl">
         <thead><tr><th>차수</th><th>무료체험 시작일</th><th>1차 안내 (D+40)</th><th>권장 안내 기간</th><th>마감일</th><th>상태</th></tr></thead>
-        <tbody>
-          <tr>
-            <td style="font-weight:600">1차</td>
-            <td>2026.03.23</td>
-            <td style="font-weight:600;color:#6366F1">5/2</td>
-            <td style="color:var(--text2)">5/2 ~ 5/7</td>
-            <td>5/9</td>
-            <td><span class="badge badge-green">진행 완료</span></td>
-          </tr>
-          <tr>
-            <td style="font-weight:600">2차</td>
-            <td>2026.04.13</td>
-            <td style="font-weight:600;color:#6366F1">5/23</td>
-            <td style="color:var(--text2)">5/23 ~ 5/28</td>
-            <td>5/30</td>
-            <td><span class="badge badge-amber">예정</span></td>
-          </tr>
-          <tr>
-            <td style="font-weight:600">3차</td>
-            <td>2026.04.20</td>
-            <td style="font-weight:600;color:#6366F1">5/30</td>
-            <td style="color:var(--text2)">5/30 ~ 6/4</td>
-            <td>6/6</td>
-            <td><span class="badge badge-amber">예정</span></td>
-          </tr>
-          <tr>
-            <td style="font-weight:600">4차</td>
-            <td>2026.05.04</td>
-            <td style="font-weight:600;color:#6366F1">6/13</td>
-            <td style="color:var(--text2)">6/13 ~ 6/18</td>
-            <td>6/20</td>
-            <td><span class="badge badge-amber">예정</span></td>
-          </tr>
+        <tbody id="scheduleTableBody">
+          <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3)">불러오는 중...</td></tr>
         </tbody>
       </table>
     </div>
@@ -644,7 +613,7 @@ function goPage(page){
     loadUsageSchools();
     loadMemosUsage();
   }
-  if(page==='mission') renderMission();
+  if(page==='mission'){renderMission();loadSchedule();}
   loadMemos();
   if(page==='schools') loadSchools();
 }
@@ -1503,6 +1472,33 @@ async function loadMemos(){
     }).join('');
   }catch(e){
     if(el) el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">메모를 불러올 수 없어요</div>';
+  }
+}
+
+async function loadSchedule(){
+  try{
+    const res=await fetch(APPS_SCRIPT_URL+'?sheet=schedule',{cache:'no-store'});
+    const json=await res.json();
+    const tbody=document.getElementById('scheduleTableBody');
+    if(!tbody)return;
+    if(!json||json.length===0){
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3)">데이터 없음</td></tr>';
+      return;
+    }
+    tbody.innerHTML=json.map(d=>{
+      const status=d['status']||'';
+      const badgeClass=status==='완료'?'badge-green':status==='진행중'?'badge-blue':'badge-amber';
+      return '<tr>'+
+        '<td style="font-weight:600">'+(d['round']||'')+'</td>'+
+        '<td>'+(d['start_date']||'')+'</td>'+
+        '<td style="font-weight:600;color:#6366F1">'+(d['notify_date']||'')+'</td>'+
+        '<td style="color:var(--text2)">'+(d['period']||'')+'</td>'+
+        '<td>'+(d['deadline']||'')+'</td>'+
+        '<td><span class="badge '+badgeClass+'">'+status+'</span></td>'+
+      '</tr>';
+    }).join('');
+  }catch(e){
+    console.warn('일정 로드 실패:',e);
   }
 }
 
