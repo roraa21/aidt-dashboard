@@ -1485,16 +1485,26 @@ async function loadSchedule(){
       tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3)">데이터 없음</td></tr>';
       return;
     }
+    // 날짜 포맷 함수
+    const fmtD=v=>{
+      if(!v) return '';
+      const d=new Date(v);
+      if(!isNaN(d)&&String(v).includes('T')){
+        return d.getFullYear()+'.'+(d.getMonth()+1).toString().padStart(2,'0')+'.'+d.getDate().toString().padStart(2,'0');
+      }
+      return String(v);
+    };
     tbody.innerHTML=json.map(d=>{
       const status=d['status']||'';
-      const badgeClass=status==='완료'?'badge-green':status==='진행중'?'badge-blue':'badge-amber';
+      const badgeClass=status==='완료'?'badge-green':status==='진행중'?'badge-blue':status==='예정'?'badge-amber':'badge-amber';
+      const badgeStyle=status==='완료'?'background:var(--green-bg);color:var(--green)':status==='진행중'?'background:var(--blue-bg);color:var(--blue)':'background:var(--amber-bg);color:var(--amber)';
       return '<tr>'+
         '<td style="font-weight:600">'+(d['round']||'')+'</td>'+
-        '<td>'+(d['start_date']||'')+'</td>'+
-        '<td style="font-weight:600;color:#6366F1">'+(d['notify_date']||'')+'</td>'+
-        '<td style="color:var(--text2)">'+(d['period']||'')+'</td>'+
-        '<td>'+(d['deadline']||'')+'</td>'+
-        '<td><span class="badge '+badgeClass+'">'+status+'</span></td>'+
+        '<td>'+fmtD(d['start_date'])+'</td>'+
+        '<td style="font-weight:600;color:#6366F1">'+fmtD(d['notify_date'])+'</td>'+
+        '<td style="color:var(--text2)">'+fmtD(d['period'])+'</td>'+
+        '<td>'+fmtD(d['deadline'])+'</td>'+
+        '<td><span class="badge" style="'+badgeStyle+'">'+status+'</span></td>'+
       '</tr>';
     }).join('');
   }catch(e){
