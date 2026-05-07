@@ -408,8 +408,71 @@ table.status-tbl tr:hover td{background:var(--surface2)}
 
   <!-- 마케팅 미션 현황 -->
   <div class="page" id="page-mission">
-    <div class="page-header"><h1>마케팅 미션 현황</h1><p>수업 후기·설문·인터뷰 등 미션 제출 현황</p></div>
+    <div class="page-header"><h1>마케팅 미션 현황</h1><p>중간 점검 설문 · 수업 후기 · 전환 의향 수집 현황</p></div>
     <div class="tabs" id="missionTabBar" style="display:flex;flex-direction:column;gap:0;margin-bottom:20px"></div>
+
+    <!-- 중간 점검 운영 개요 -->
+    <div style="background:linear-gradient(135deg,#EEF2FF,#E0F2FE);border:1px solid #C7D2FE;border-radius:var(--r-md);padding:20px 24px;margin-bottom:20px">
+      <div style="font-size:13px;font-weight:700;color:#3730A3;margin-bottom:14px">📌 중간 점검 운영 개요</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:14px">
+          <div style="font-size:10px;font-weight:700;color:#6366F1;margin-bottom:6px;letter-spacing:.05em">추진 목적</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7">• 사용 현황 점검<br>• 미사용 사유 파악 → 재활성화<br>• 도입 의향 및 후기 확보</div>
+        </div>
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:14px">
+          <div style="font-size:10px;font-weight:700;color:#6366F1;margin-bottom:6px;letter-spacing:.05em">운영 방식</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7">• 설문 + 후기 병행 수집<br>• 차수별 7일 운영<br>• 사용/미사용자 분리 발송</div>
+        </div>
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:14px">
+          <div style="font-size:10px;font-weight:700;color:#6366F1;margin-bottom:6px;letter-spacing:.05em">기대 효과</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7">• 미사용 교사 재활성화<br>• 도입 가능 교사 선별<br>• 수업 사례 콘텐츠 확보</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 차수별 일정 -->
+    <div class="status-table-wrap" style="margin-bottom:20px">
+      <div class="status-table-head">📅 차수별 중간 점검 일정</div>
+      <table class="status-tbl">
+        <thead><tr><th>차수</th><th>무료체험 시작일</th><th>1차 안내 (D+40)</th><th>권장 안내 기간</th><th>마감일</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600">1차</td>
+            <td>2026.03.23</td>
+            <td style="font-weight:600;color:#6366F1">5/2</td>
+            <td style="color:var(--text2)">5/2 ~ 5/7</td>
+            <td>5/9</td>
+            <td><span class="badge badge-green">진행 완료</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">2차</td>
+            <td>2026.04.13</td>
+            <td style="font-weight:600;color:#6366F1">5/23</td>
+            <td style="color:var(--text2)">5/23 ~ 5/28</td>
+            <td>5/30</td>
+            <td><span class="badge badge-amber">예정</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">3차</td>
+            <td>2026.04.20</td>
+            <td style="font-weight:600;color:#6366F1">5/30</td>
+            <td style="color:var(--text2)">5/30 ~ 6/4</td>
+            <td>6/6</td>
+            <td><span class="badge badge-amber">예정</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600">4차</td>
+            <td>2026.05.04</td>
+            <td style="font-weight:600;color:#6366F1">6/13</td>
+            <td style="color:var(--text2)">6/13 ~ 6/18</td>
+            <td>6/20</td>
+            <td><span class="badge badge-amber">예정</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- KPI + 제출률 차트 -->
     <div class="kpi-grid" id="missionKpi"></div>
     <div class="charts-row">
       <div class="chart-card">
@@ -424,6 +487,27 @@ table.status-tbl tr:hover td{background:var(--surface2)}
         <div style="position:relative;height:195px"><canvas id="missionChart1"></canvas></div>
       </div>
     </div>
+
+    <!-- 운영 체크리스트 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:20px 24px;margin-bottom:14px;box-shadow:var(--shadow)">
+      <div style="font-size:13px;font-weight:700;color:var(--text1);margin-bottom:14px">✅ 운영 체크리스트</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div style="border-left:3px solid #DEEAF1;padding:10px 14px;background:#f4f8fc;border-radius:0 8px 8px 0">
+          <div style="font-size:11px;font-weight:700;color:#1F4E79;margin-bottom:8px">D-3 ~ D-1 준비</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">☐ 차수별 대상 교사 리스트 정리<br>☐ 사용/미사용자 분류<br>☐ 설문 링크 및 문항 점검</div>
+        </div>
+        <div style="border-left:3px solid #E2EFDA;padding:10px 14px;background:#f4fcf7;border-radius:0 8px 8px 0">
+          <div style="font-size:11px;font-weight:700;color:#375623;margin-bottom:8px">D-day 1차 발송</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">☐ 차수별 일정 맞춰 발송<br>☐ 사용/미사용자 메시지 구분<br>☐ 설문 링크 포함 확인</div>
+        </div>
+        <div style="border-left:3px solid #FFF2CC;padding:10px 14px;background:#fdfcf0;border-radius:0 8px 8px 0">
+          <div style="font-size:11px;font-weight:700;color:#7F6000;margin-bottom:8px">D+2~3 리마인드</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">☐ 미응답자 추가 안내<br>☐ 미사용자 별도 참여 유도<br>☐ 응답률 확인</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 상세 현황 테이블 -->
     <div class="status-table-wrap">
       <div class="status-table-head">미션 상세 현황</div>
       <table class="status-tbl" id="missionTable"></table>
@@ -1112,7 +1196,7 @@ function renderUsageTable(){
   // 인사이트 보드
   const insightBoard=document.getElementById('usageInsightBoard');
   const insightCards=document.getElementById('usageInsightCards');
-  if(insightBoard&&insightCards&&filtered.length>0){
+  if(insightBoard&&insightCards){
     insightBoard.style.display='block';
 
     // 1. 학생 미접속 학교
