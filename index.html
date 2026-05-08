@@ -1014,14 +1014,14 @@ function renderUsageCharts(data){
   const row=document.getElementById('usageChartsRow');
   if(row) row.style.display='grid';
 
-  // 탭별 신청 학교 수 (ALL_DATA 기준)
+  // 탭별 실참여 학교 수 (ALL_DATA actual 기준)
   const applyMap={
-    'all': ALL_DATA.reduce((s,d)=>s+(d.type==='regular'&&d.key!=='regular_2'?d.apply:(d.type!=='regular'?d.apply:0)),0),
-    '3mo': ALL_DATA.filter(d=>d.group==='3mo').reduce((s,d)=>s+(d.type==='regular'&&d.key==='regular_1'?d.apply:d.type!=='regular'?d.apply:0),0),
-    'regular': ALL_DATA.filter(d=>d.type==='regular')[0]?.apply||0,
-    'spot': ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+d.apply,0),
-    'book': ALL_DATA.find(d=>d.key==='book_1')?.apply||0,
-    'budget': ALL_DATA.find(d=>d.key==='budget_1')?.apply||0,
+    'all': ALL_DATA.reduce((s,d)=>s+(d.actual||0),0),
+    '3mo': ALL_DATA.filter(d=>d.group==='3mo').reduce((s,d)=>s+(d.actual||0),0),
+    'regular': ALL_DATA.filter(d=>d.type==='regular').reduce((s,d)=>s+(d.actual||0),0),
+    'spot': ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+(d.actual||0),0),
+    'book': ALL_DATA.find(d=>d.key==='book_1')?.actual||0,
+    'budget': ALL_DATA.find(d=>d.key==='budget_1')?.actual||0,
   };
 
   // 프로모션별 그룹핑 (사용 학교 수 - 중복 제거)
@@ -1044,13 +1044,13 @@ function renderUsageCharts(data){
 
     if(tab==='all'){
       chartData=[
-        {label:'정기',used:regularSchools.size,apply:ALL_DATA.find(d=>d.key==='regular_1')?.apply||0,color:'#6366F1'},
-        {label:'비정기',used:spotSchools.size,apply:ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+d.apply,0),color:'#818CF8'},
+        {label:'정기',used:regularSchools.size,apply:ALL_DATA.filter(d=>d.type==='regular').reduce((s,d)=>s+(d.actual||0),0),color:'#6366F1'},
+        {label:'비정기',used:spotSchools.size,apply:ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+(d.actual||0),0),color:'#818CF8'},
       ];
     } else {
       chartData=[
-        {label:'정기',used:regularSchools.size,apply:ALL_DATA.find(d=>d.key==='regular_1')?.apply||0,color:'#6366F1'},
-        {label:'비정기',used:spotSchools.size,apply:ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+d.apply,0),color:'#818CF8'},
+        {label:'정기',used:regularSchools.size,apply:ALL_DATA.filter(d=>d.type==='regular').reduce((s,d)=>s+(d.actual||0),0),color:'#6366F1'},
+        {label:'비정기',used:spotSchools.size,apply:ALL_DATA.filter(d=>d.type==='spot').reduce((s,d)=>s+(d.actual||0),0),color:'#818CF8'},
       ];
     }
   } else {
@@ -1064,7 +1064,7 @@ function renderUsageCharts(data){
 
   // 레전드
   const leg=document.getElementById('usagePromoLegend');
-  if(leg) leg.innerHTML=chartData.map(d=>`<span><span class="leg-dot" style="background:${d.color}"></span>${d.label} (${d.apply}개교 중 ${d.used}개교)</span>`).join('');
+  if(leg) leg.innerHTML=chartData.map(d=>'<span><span class="leg-dot" style="background:'+d.color+'"></span>'+d.label+' (실참여 '+d.apply+'개교 중 '+d.used+'개교)</span>').join('');
 
   // 도넛 차트 - 사용/미사용 비율
   dc('upc');
@@ -1075,7 +1075,7 @@ function renderUsageCharts(data){
     data:{labels:['사용','미사용'],datasets:[{data:[totalUsed,notUsed],backgroundColor:['#6366F1','#E2E8F0'],borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
       plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed}개교 (${totalApply>0?Math.round(ctx.parsed/totalApply*100):0}%)`}},
+        tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed+'개교 ('+( totalApply>0?Math.round(ctx.parsed/totalApply*100):0)+'%)'}},
         datalabels:{display:true,color:['#fff','#94A3B8'],font:{size:11,weight:'700'},
           formatter:(v)=>totalApply>0&&v>0?Math.round(v/totalApply*100)+'%':''}}}
   });
