@@ -477,10 +477,41 @@ table.status-tbl tr:hover td{background:var(--surface2)}
       </div>
     </div>
 
-    <!-- 상세 현황 테이블 -->
-    <div class="status-table-wrap">
-      <div class="status-table-head">미션 상세 현황</div>
+    <!-- 프로모션별 집계 현황 -->
+    <div class="status-table-wrap" style="margin-bottom:14px">
+      <div class="status-table-head">프로모션별 미션 현황</div>
       <table class="status-tbl" id="missionTable"></table>
+    </div>
+
+    <!-- 학교별 상세 현황 -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;color:var(--text1)">학교별 미션 상세 현황</div>
+      <div style="display:flex;gap:8px">
+        <select class="search-select" id="missionSurveyFilter" onchange="renderMissionSchools()" style="min-width:130px">
+          <option value="">전체 설문</option>
+          <option value="제출">설문 제출</option>
+          <option value="미제출">설문 미제출</option>
+        </select>
+        <select class="search-select" id="missionReviewFilter" onchange="renderMissionSchools()" style="min-width:130px">
+          <option value="">전체 후기</option>
+          <option value="제출">후기 제출</option>
+          <option value="미제출">후기 미제출</option>
+        </select>
+      </div>
+    </div>
+    <div class="status-table-wrap">
+      <div style="overflow-x:auto">
+        <table class="status-tbl">
+          <thead><tr>
+            <th>지역</th><th>학교명</th><th>과목</th><th>학년</th>
+            <th>프로모션</th><th>중간 설문</th><th>중간 후기</th><th>비고</th>
+          </tr></thead>
+          <tbody id="missionSchoolsBody">
+            <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3)">불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="missionSchoolsSummary" style="padding:12px 20px;border-top:1px solid var(--border);font-size:12px;color:var(--text3)"></div>
     </div>
   </div>
 
@@ -614,7 +645,7 @@ function goPage(page){
     loadUsageSchools();
     loadMemosUsage();
   }
-  if(page==='mission'){renderMission();loadSchedule();}
+  if(page==='mission'){renderMission();loadSchedule();if(schoolsData.length===0){loadSchools().then(()=>renderMissionSchools());}else{renderMissionSchools();}}
   loadMemos();
   if(page==='schools') loadSchools();
 }
@@ -1512,6 +1543,54 @@ async function loadSchedule(){
   }catch(e){
     console.warn('일정 로드 실패:',e);
   }
+}
+
+function renderMissionSchools(){
+  const surveyFilter=document.getElementById('missionSurveyFilter')?.value||'';
+  const reviewFilter=document.getElementById('missionReviewFilter')?.value||'';
+  const tbody=document.getElementById('missionSchoolsBody');
+  if(!tbody) return;
+
+  const isSubmit=v=>v==='O'||v==='제출';
+  const isFail=v=>v==='X'||v==='미제출';
+
+  let filtered=schoolsData.filter(d=>d.school);
+  if(surveyFilter==='제출') filtered=filtered.filter(d=>isSubmit(d.mid_survey));
+  else if(surveyFilter==='미제출') filtered=filtered.filter(d=>isFail(d.mid_survey)||(!d.mid_survey));
+  if(reviewFilter==='제출') filtered=filtered.filter(d=>isSubmit(d.mid_review));
+  else if(reviewFilter==='미제출') filtered=filtered.filter(d=>isFail(d.mid_review)||(!d.mid_review));
+
+  if(filtered.length===0){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3)">데이터가 없어요</td></tr>';
+    return;
+  }
+
+  const surveyDone=filtered.filter(d=>isSubmit(d.mid_survey)).length;
+  const reviewDone=filtered.filter(d=>isSubmit(d.mid_review)).length;
+  const total=filtered.length;
+
+  const summary=document.getElementById('missionSchoolsSummary');
+  if(summary) summary.innerHTML=
+    '총 '+total+'개교 중 중간 설문 <strong style="color:var(--green)">'+surveyDone+'개교</strong> 제출 ('+Math.round(surveyDone/total*100)+'%) · '+
+    '중간 후기 <strong style="color:var(--amber)">'+reviewDone+'개교</strong> 제출 ('+Math.round(reviewDone/total*100)+'%)';
+
+  const promoColor=p=>p&&p.includes('무료체험')?'#6366F1':p&&(p.includes('서책')||p.includes('1년'))?'#10B981':p&&p.includes('예산')?'#F59E0B':'#64748B';
+
+  tbody.innerHTML=filtered.map(d=>{
+    const sb=isSubmit(d.mid_survey)?'<span class="badge badge-green">제출</span>':isFail(d.mid_survey)?'<span class="badge badge-amber">미제출</span>':'<span style="color:var(--text3)">-</span>';
+    const rb=isSubmit(d.mid_review)?'<span class="badge badge-green">제출</span>':isFail(d.mid_review)?'<span class="badge badge-amber">미제출</span>':'<span style="color:var(--text3)">-</span>';
+    const pc=promoColor(d.promo);
+    return '<tr>'+
+      '<td style="color:var(--text2);font-size:12px">'+(d.region||'-')+'</td>'+
+      '<td style="font-weight:600">'+d.school+'</td>'+
+      '<td style="font-size:12px">'+(d.subject||'-')+'</td>'+
+      '<td style="font-size:12px">'+(d.grade||'-')+'</td>'+
+      '<td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:'+pc+'18;color:'+pc+'">'+(d.promo||'-')+'</span></td>'+
+      '<td style="text-align:center">'+sb+'</td>'+
+      '<td style="text-align:center">'+rb+'</td>'+
+      '<td style="color:var(--text3);font-size:11px">'+(d.note||'')+'</td>'+
+    '</tr>';
+  }).join('');
 }
 
 async function loadFromSheet(){
