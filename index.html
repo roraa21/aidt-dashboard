@@ -159,6 +159,10 @@ table.status-tbl tr:hover td{background:var(--surface2)}
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13V7l6-5 6 5v6"/><path d="M6 13v-4h4v4"/></svg>
       <span>신청 학교 리스트</span>
     </div>
+    <div class="nav-item" onclick="goPage('budget')">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3l2 2"/></svg>
+      <span>예산 지원 학교</span>
+    </div>
   </nav>
   <div class="sidebar-bottom">
     <div class="date-label" id="updated-date">업데이트 주기: 매일</div>
@@ -621,7 +625,7 @@ function goPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  const idx=['process','apply','usage','mission','schools'].indexOf(page);
+  const idx=['process','apply','usage','mission','schools','budget'].indexOf(page);
   document.querySelectorAll('.nav-item')[idx].classList.add('active');
   if(page==='apply'){
     if(schoolsData.length===0){
@@ -638,6 +642,7 @@ function goPage(page){
   if(page==='mission'){renderMission();loadSchedule();if(schoolsData.length===0){loadSchools().then(()=>renderMissionSchools());}else{renderMissionSchools();}}
   loadMemos();
   if(page==='schools') loadSchools();
+  if(page==='budget') loadBudgetSchools();
 }
 
 function renderPromoTypes(){
@@ -1642,6 +1647,71 @@ function renderMissionSchools(){
   }).join('');
 }
 
+let budgetData=[];
+
+async function loadBudgetSchools(){
+  if(budgetData.length>0){renderBudgetSchools();return;}
+  try{
+    const res=await fetch(APPS_SCRIPT_URL+'?sheet=budget',{cache:'no-store'});
+    const json=await res.json();
+    budgetData=json.map(row=>({
+      region:row['region']||row['지역(교육청)']||'',
+      school:row['school']||row['학교명']||'',
+      subject:row['subject']||row['과목']||'',
+      grade:String(row['grade']||row['학년']||''),
+      teachers:row['teachers']||row['교사수']||'',
+      students:row['students']||row['학생수']||'',
+      source_items:row['source_items']||row['상세계약과목']||'',
+    })).filter(d=>d.school);
+    renderBudgetSchools();
+  }catch(e){
+    console.warn('예산 지원 학교 로드 실패:',e);
+    const el=document.getElementById('budgetBody');
+    if(el) el.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3)">데이터를 불러올 수 없습니다</td></tr>';
+  }
+}
+
+function renderBudgetSchools(){
+  const regions=[...new Set(budgetData.map(d=>d.region).filter(Boolean))];
+  const rSel=document.getElementById('budgetRegionFilter');
+  if(rSel) rSel.innerHTML='<option value="">전체 지역</option>'+regions.map(r=>'<option value="'+r+'">'+r+'</option>').join('');
+  filterBudgetSchools();
+}
+
+function filterBudgetSchools(){
+  const search=document.getElementById('budgetSearch')?.value.toLowerCase()||'';
+  const region=document.getElementById('budgetRegionFilter')?.value||'';
+  const filtered=budgetData.filter(d=>
+    (!search||(d.school.toLowerCase().includes(search)||d.region.toLowerCase().includes(search)))&&
+    (!region||d.region===region)
+  );
+  const total=filtered.length;
+  document.getElementById('budgetCount').textContent='총 '+total+'개교';
+  const summary=document.getElementById('budgetSummary');
+  if(summary) summary.innerHTML=
+    '<div class="summary-chip"><span style="color:var(--text3)">총 학교</span><span style="font-size:18px;font-weight:700;color:#F59E0B;margin-left:8px">'+total+'개교</span></div>'+
+    '<div class="summary-chip"><span style="color:var(--text3)">총 학생</span><span style="font-size:18px;font-weight:700;color:#0EA5E9;margin-left:8px">'+filtered.reduce((s,d)=>s+(parseInt(d.students)||0),0).toLocaleString()+'명</span></div>';
+  const tbody=document.getElementById('budgetBody');
+  if(!tbody) return;
+  if(filtered.length===0){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text3)">검색 결과가 없습니다</td></tr>';
+    return;
+  }
+  tbody.innerHTML=filtered.map(d=>{
+    const label=getSchoolLabel(d.region,d.school);
+    const badge=label==='AI중점'?'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#FFF3E0;color:#F59E0B;margin-left:4px">AI중점</span>':label==='AI선도'?'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#EDE7F6;color:#7C3AED;margin-left:4px">AI선도</span>':'';
+    return '<tr>'+
+      '<td style="color:var(--text2);font-size:12px">'+d.region+'</td>'+
+      '<td style="font-weight:600">'+d.school+badge+'</td>'+
+      '<td>'+d.subject+'</td>'+
+      '<td style="color:var(--text2);font-size:12px">'+( d.source_items||'-')+'</td>'+
+      '<td>'+d.grade+'</td>'+
+      '<td style="text-align:center">'+d.teachers+'</td>'+
+      '<td style="text-align:center">'+d.students+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
 async function loadFromSheet(){
   document.getElementById('updated-date').textContent='데이터 불러오는 중...';
   try{
@@ -1686,6 +1756,35 @@ loadFromSheet();
 setInterval(()=>loadFromSheet(),10*60*1000);
 loadMemos();
 </script>
+
+
+  <!-- 예산 지원 학교 -->
+  <div class="page" id="page-budget" style="display:none">
+    <div class="page-header"><h1>예산 지원 학교</h1><p>예산 지원 프로모션 참여 학교 현황</p></div>
+    <div class="summary-chips" id="budgetSummary"></div>
+    <div class="search-bar">
+      <input type="text" class="search-input" id="budgetSearch" placeholder="학교명/지역 검색" oninput="filterBudgetSchools()">
+      <select class="search-select" id="budgetRegionFilter" onchange="filterBudgetSchools()"><option value="">전체 지역</option></select>
+    </div>
+    <div class="status-table-wrap">
+      <div class="status-table-head" style="display:flex;justify-content:space-between;align-items:center">
+        <span>학교 현황</span>
+        <span id="budgetCount" style="font-size:12px;color:var(--text3);font-weight:400"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="status-tbl">
+          <thead><tr>
+            <th>지역(교육청)</th><th>학교명</th><th>과목</th><th>상세 계약 과목</th><th>학년</th><th>선생님</th><th>학생 수</th>
+          </tr></thead>
+          <tbody id="budgetBody">
+            <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text3)">데이터 불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
 
 </body>
 </html>
