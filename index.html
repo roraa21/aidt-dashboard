@@ -1497,8 +1497,9 @@ async function loadSchedule(){
     };
     tbody.innerHTML=json.map(d=>{
       const status=d['status']||'';
-      const badgeClass=status==='완료'?'badge-green':status==='진행중'?'badge-blue':status==='예정'?'badge-amber':'badge-amber';
-      const badgeStyle=status==='완료'?'background:var(--green-bg);color:var(--green)':status==='진행중'?'background:var(--blue-bg);color:var(--blue)':'background:var(--amber-bg);color:var(--amber)';
+      const st=status.replace(/\s/g,'');
+      const badgeClass=st==='완료'?'badge-green':st==='진행중'?'badge-blue':st==='예정'?'badge-amber':'badge-amber';
+      const badgeStyle=st==='완료'?'background:var(--green-bg);color:var(--green)':st==='진행중'?'background:var(--blue-bg);color:var(--blue)':'background:var(--amber-bg);color:var(--amber)';
       return '<tr>'+
         '<td style="font-weight:600">'+(d['round']||'')+'</td>'+
         '<td>'+fmtD(d['start_date'])+'</td>'+
