@@ -486,13 +486,21 @@ table.status-tbl tr:hover td{background:var(--surface2)}
     <!-- 학교별 상세 현황 -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-size:13px;font-weight:700;color:var(--text1)">학교별 미션 상세 현황</div>
-      <div style="display:flex;gap:8px">
-        <select class="search-select" id="missionSurveyFilter" onchange="renderMissionSchools()" style="min-width:130px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select class="search-select" id="missionRoundFilter" onchange="renderMissionSchools()" style="min-width:100px">
+          <option value="">전체 차수</option>
+          <option value="1차">1차</option>
+          <option value="2차">2차</option>
+          <option value="3차">3차</option>
+          <option value="4차">4차</option>
+          <option value="비정기">비정기</option>
+        </select>
+        <select class="search-select" id="missionSurveyFilter" onchange="renderMissionSchools()" style="min-width:120px">
           <option value="">전체 설문</option>
           <option value="제출">설문 제출</option>
           <option value="미제출">설문 미제출</option>
         </select>
-        <select class="search-select" id="missionReviewFilter" onchange="renderMissionSchools()" style="min-width:130px">
+        <select class="search-select" id="missionReviewFilter" onchange="renderMissionSchools()" style="min-width:120px">
           <option value="">전체 후기</option>
           <option value="제출">후기 제출</option>
           <option value="미제출">후기 미제출</option>
@@ -503,11 +511,11 @@ table.status-tbl tr:hover td{background:var(--surface2)}
       <div style="overflow-x:auto">
         <table class="status-tbl">
           <thead><tr>
-            <th>지역</th><th>학교명</th><th>과목</th><th>학년</th>
+            <th>차수</th><th>지역</th><th>학교명</th><th>과목</th><th>학년</th>
             <th>프로모션</th><th>중간 설문</th><th>중간 후기</th><th>비고</th>
           </tr></thead>
           <tbody id="missionSchoolsBody">
-            <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3)">불러오는 중...</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text3)">불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1359,6 +1367,7 @@ async function loadSchools(){
         teachers:row['teachers']||row['선생님수']||'',
         students:row['students']||row['학생수']||'',
         promo:row['promo']||row['프로모션명']||'',
+        round:row['round']||row['차수']||'',
         mid_survey:row['mid_survey']||row['중간설문']||'',
         mid_review:row['mid_review']||row['중간후기']||'',
         note:row['note']||row['비고']||'',
@@ -1548,20 +1557,23 @@ async function loadSchedule(){
 function renderMissionSchools(){
   const surveyFilter=document.getElementById('missionSurveyFilter')?.value||'';
   const reviewFilter=document.getElementById('missionReviewFilter')?.value||'';
+  const roundFilter=document.getElementById('missionRoundFilter')?.value||'';
   const tbody=document.getElementById('missionSchoolsBody');
   if(!tbody) return;
 
   const isSubmit=v=>v==='O'||v==='제출';
   const isFail=v=>v==='X'||v==='미제출';
 
-  let filtered=schoolsData.filter(d=>d.school);
+  // 서책 제외
+  let filtered=schoolsData.filter(d=>d.school&&!d.promo.includes('서책')&&!d.promo.includes('1년무상')&&!d.promo.includes('1년 무상'));
+  if(roundFilter) filtered=filtered.filter(d=>d.round===roundFilter);
   if(surveyFilter==='제출') filtered=filtered.filter(d=>isSubmit(d.mid_survey));
   else if(surveyFilter==='미제출') filtered=filtered.filter(d=>isFail(d.mid_survey)||(!d.mid_survey));
   if(reviewFilter==='제출') filtered=filtered.filter(d=>isSubmit(d.mid_review));
   else if(reviewFilter==='미제출') filtered=filtered.filter(d=>isFail(d.mid_review)||(!d.mid_review));
 
   if(filtered.length===0){
-    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3)">데이터가 없어요</td></tr>';
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text3)">데이터가 없어요</td></tr>';
     return;
   }
 
@@ -1581,6 +1593,7 @@ function renderMissionSchools(){
     const rb=isSubmit(d.mid_review)?'<span class="badge badge-green">제출</span>':isFail(d.mid_review)?'<span class="badge badge-amber">미제출</span>':'<span style="color:var(--text3)">-</span>';
     const pc=promoColor(d.promo);
     return '<tr>'+
+      '<td style="font-size:12px;font-weight:600;color:#6366F1">'+(d.round||'-')+'</td>'+
       '<td style="color:var(--text2);font-size:12px">'+(d.region||'-')+'</td>'+
       '<td style="font-weight:600">'+d.school+'</td>'+
       '<td style="font-size:12px">'+(d.subject||'-')+'</td>'+
