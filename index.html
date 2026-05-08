@@ -442,22 +442,6 @@ table.status-tbl tr:hover td{background:var(--surface2)}
       </table>
     </div>
 
-    <!-- KPI + 제출률 차트 -->
-    <div class="kpi-grid" id="missionKpi"></div>
-    <div class="charts-row">
-      <div class="chart-card">
-        <div class="chart-title">미션 제출률</div>
-        <div class="chart-sub">중간(D+40~45) · 최종 달성률</div>
-        <div id="missionProgArea" style="margin-top:4px"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">중간 vs 최종 제출률 비교</div>
-        <div class="chart-sub">프로모션 유형별</div>
-        <div class="legend"><span><span class="leg-dot" style="background:#534AB7"></span>중간</span><span><span class="leg-dot" style="background:#D85A30"></span>최종</span></div>
-        <div style="position:relative;height:195px"><canvas id="missionChart1"></canvas></div>
-      </div>
-    </div>
-
     <!-- 운영 체크리스트 -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:20px 24px;margin-bottom:14px;box-shadow:var(--shadow)">
       <div style="font-size:13px;font-weight:700;color:var(--text1);margin-bottom:14px">✅ 운영 체크리스트</div>
@@ -1302,8 +1286,36 @@ function renderUsageTable(){
 }
 
 function setMissionTab(tab){curMissionTab=tab;renderMission();}
+function buildMissionTabBar(){
+  const el=document.getElementById('missionTabBar');
+  if(!el) return;
+  const missionTabs=[
+    {key:'all',label:'전체',color:'#0F172A'},
+    {key:'3mo',label:'3개월 무료체험',color:'#6366F1'},
+    {key:'budget',label:'예산지원',color:'#F59E0B'},
+  ];
+  const is3mo=curMissionTab==='3mo'||curMissionTab==='regular'||curMissionTab==='spot';
+  var h='<div style="display:flex;flex-direction:row;gap:6px;flex-wrap:wrap">';
+  missionTabs.forEach(function(t){
+    var isActive=t.key===curMissionTab||(is3mo&&t.key==='3mo');
+    var style=isActive?'background:'+t.color+';color:#fff;border-color:'+t.color+';box-shadow:0 4px 12px '+t.color+'40':'';
+    h+='<button class="tab'+(isActive?' active':'')+'" style="'+style+'" onclick="setMissionTab(this.dataset.key)" data-key="'+t.key+'">'+t.label+'</button>';
+  });
+  h+='</div>';
+  if(is3mo){
+    h+='<div style="display:flex;gap:6px;margin-top:6px;padding-left:52px;align-items:center">';
+    h+='<span style="font-size:10px;color:#818CF8;font-weight:600;margin-right:2px">└</span>';
+    SUB_TABS_3MO.forEach(function(t){
+      var isActive2=t.key===curMissionTab;
+      var s=isActive2?'background:#6366F1;color:#fff;border-color:#6366F1':'background:#EEF2FF;color:#6366F1;border-color:#C7D2FE';
+      h+='<button style="font-size:11px;font-weight:600;padding:5px 16px;border-radius:99px;border:1.5px solid;cursor:pointer;font-family:inherit;transition:all .15s;'+s+'" onclick="setMissionTab(this.dataset.key)" data-key="'+t.key+'">'+t.label+'</button>';
+    });
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
 function renderMission(){
-  buildTabBar('missionTabBar',curMissionTab,'setMissionTab');
+  buildMissionTabBar();
   const rows=getRows(curMissionTab);
   renderKpi('missionKpi',rows,'mission');
   dc('mc1');
