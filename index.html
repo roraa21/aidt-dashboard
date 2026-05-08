@@ -483,17 +483,15 @@ table.status-tbl tr:hover td{background:var(--surface2)}
       <table class="status-tbl" id="missionTable"></table>
     </div>
 
+    <!-- 차수별 요약 -->
+    <div id="missionRoundSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"></div>
+
     <!-- 학교별 상세 현황 -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-size:13px;font-weight:700;color:var(--text1)">학교별 미션 상세 현황</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <select class="search-select" id="missionRoundFilter" onchange="renderMissionSchools()" style="min-width:100px">
           <option value="">전체 차수</option>
-          <option value="1차">1차</option>
-          <option value="2차">2차</option>
-          <option value="3차">3차</option>
-          <option value="4차">4차</option>
-          <option value="비정기">비정기</option>
         </select>
         <select class="search-select" id="missionSurveyFilter" onchange="renderMissionSchools()" style="min-width:120px">
           <option value="">전체 설문</option>
@@ -1554,10 +1552,23 @@ async function loadSchedule(){
   }
 }
 
+function setMissionRound(r){
+  const sel=document.getElementById('missionRoundFilter');
+  if(sel) sel.value=r;
+  renderMissionSchools();
+}
+
 function renderMissionSchools(){
   const surveyFilter=document.getElementById('missionSurveyFilter')?.value||'';
   const reviewFilter=document.getElementById('missionReviewFilter')?.value||'';
-  const roundFilter=document.getElementById('missionRoundFilter')?.value||'';
+  // 차수 필터 동적 생성
+  const roundSel=document.getElementById('missionRoundFilter');
+  if(roundSel){
+    const curRound=roundSel.value;
+    const rounds=[...new Set(schoolsData.filter(d=>d.round).map(d=>d.round))].sort();
+    roundSel.innerHTML='<option value="">전체 차수</option>'+rounds.map(r=>'<option value="'+r+'"'+(r===curRound?' selected':'')+'>'+r+'</option>').join('');
+  }
+  const roundFilter=roundSel?.value||'';
   const tbody=document.getElementById('missionSchoolsBody');
   if(!tbody) return;
 
@@ -1565,12 +1576,43 @@ function renderMissionSchools(){
   const isFail=v=>v==='X'||v==='미제출';
 
   // 서책 제외
-  let filtered=schoolsData.filter(d=>d.school&&!d.promo.includes('서책')&&!d.promo.includes('1년무상')&&!d.promo.includes('1년 무상'));
+  let filtered=schoolsData.filter(d=>d.school&&!d.promo.includes('서책')&&!d.promo.includes('1년무상')&&!d.promo.includes('1년 무상')&&!d.promo.includes('1년 무료')&&!d.promo.includes('무상 지원')&&!d.promo.includes('초등 영어 서책'));
   if(roundFilter) filtered=filtered.filter(d=>d.round===roundFilter);
   if(surveyFilter==='제출') filtered=filtered.filter(d=>isSubmit(d.mid_survey));
   else if(surveyFilter==='미제출') filtered=filtered.filter(d=>isFail(d.mid_survey)||(!d.mid_survey));
   if(reviewFilter==='제출') filtered=filtered.filter(d=>isSubmit(d.mid_review));
   else if(reviewFilter==='미제출') filtered=filtered.filter(d=>isFail(d.mid_review)||(!d.mid_review));
+
+  // 차수별 요약 카드
+  const summaryEl=document.getElementById('missionRoundSummary');
+  if(summaryEl){
+    const allFiltered=schoolsData.filter(d=>d.school&&!d.promo.includes('서책')&&!d.promo.includes('1년무상')&&!d.promo.includes('1년 무상')&&!d.promo.includes('1년 무료')&&!d.promo.includes('무상 지원')&&!d.promo.includes('초등 영어 서책'));
+    const rounds=[...new Set(allFiltered.filter(d=>d.round).map(d=>d.round))].sort();
+    const colors=['#6366F1','#818CF8','#0EA5E9','#10B981','#F59E0B'];
+    const cardHtml=rounds.map((r,i)=>{
+      const rData=allFiltered.filter(d=>d.round===r);
+      const total=rData.length;
+      const survey=rData.filter(d=>d.mid_survey==='O'||d.mid_survey==='제출').length;
+      const review=rData.filter(d=>d.mid_review==='O'||d.mid_review==='제출').length;
+      const c=colors[i%colors.length];
+      const sp=total>0?Math.round(survey/total*100):0;
+      const rp=total>0?Math.round(review/total*100):0;
+      return '<div class="mission-round-card" data-round="'+r+'" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;border-top:3px solid '+c+'">'+
+        '<div style="font-size:12px;font-weight:700;color:'+c+';margin-bottom:8px">'+r+'</div>'+
+        '<div style="font-size:11px;color:var(--text2);line-height:1.8">총 '+total+'개교<br>'+
+          '설문 <strong style="color:var(--green)">'+survey+'</strong>/'+total+' ('+sp+'%)<br>'+
+          '후기 <strong style="color:var(--amber)">'+review+'</strong>/'+total+' ('+rp+'%)'+
+        '</div></div>';
+    }).join('');
+    summaryEl.innerHTML=cardHtml;
+    summaryEl.querySelectorAll('.mission-round-card').forEach(card=>{
+      card.addEventListener('click',()=>{
+        const sel=document.getElementById('missionRoundFilter');
+        if(sel) sel.value=card.dataset.round;
+        renderMissionSchools();
+      });
+    });
+  }
 
   if(filtered.length===0){
     tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text3)">데이터가 없어요</td></tr>';
