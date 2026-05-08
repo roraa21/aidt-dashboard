@@ -811,7 +811,8 @@ function renderKpi(elId,rows,type){
       {label:'미션 대상 학교',val:`${tC.toLocaleString()}개교`,sub:'실참여 기준'},
     ],
   };
-  document.getElementById(elId).innerHTML=maps[type].map((k,i)=>
+  const kpiEl=document.getElementById(elId);if(!kpiEl)return;
+  kpiEl.innerHTML=maps[type].map((k,i)=>
     `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val" style="color:${colors[i]}">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`
   ).join('');
 }
@@ -1317,7 +1318,6 @@ function buildMissionTabBar(){
 function renderMission(){
   buildMissionTabBar();
   const rows=getRows(curMissionTab);
-  renderKpi('missionKpi',rows,'mission');
   dc('mc1');
   const pC=['#6366F1','#818CF8','#0EA5E9','#10B981','#F59E0B'];
   document.getElementById('missionProgArea').innerHTML=rows.map((d,i)=>`
