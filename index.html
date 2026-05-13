@@ -1060,6 +1060,9 @@ async function loadUsageSchools(){
       }
       return {
         school,promo,subject,last_progress,access_time,study_gen,
+        evaluation:row['evaluation']||row['평가']||'',
+        homework:row['homework']||row['과제']||'',
+        game:row['game']||row['게임사용']||'',
         total:parseInt(row['total']||row['전체사용자']||row['전체_사용자수'])||0,
         teachers:parseInt(row['teachers']||row['교사수'])||0,
         students:parseInt(row['students']||row['학생수'])||0,
@@ -1307,6 +1310,7 @@ function renderUsageTable(){
     '<th>학교명</th><th>과목</th><th>교사</th><th>학생</th>'+
     '<th>교사 최근접속</th><th>학생 최근접속</th>'+
     '<th>마지막 학습 진도</th><th>접속시간</th><th>스스로학습</th>'+
+    '<th>평가</th><th>과제</th><th>게임</th>'+
     '</tr></thead><tbody>'+
     display.map(d=>{
       const label=getSchoolLabel('',d.school);
@@ -1322,6 +1326,9 @@ function renderUsageTable(){
         '<td style="color:var(--text2);font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+d.last_progress+'">'+d.last_progress+'</td>'+
         '<td style="text-align:center;font-size:12px">'+d.access_time+'</td>'+
         '<td style="text-align:center;font-weight:600;color:#F59E0B">'+((d.study_gen||0)>0?d.study_gen+'건':'-')+'</td>'+
+        '<td style="color:var(--text3);font-size:11px;text-align:center">'+(d.evaluation||'-')+'</td>'+
+        '<td style="color:var(--text2);font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(d.homework||'')+'">'+(d.homework||'-')+'</td>'+
+        '<td style="text-align:center;font-size:11px">'+(d.game==='O'?'<span class="badge badge-green">O</span>':d.game==='X'?'<span style="color:var(--text3)">X</span>':'-')+'</td>'+
       '</tr>';
     }).join('')+'</tbody></table>';
 }
