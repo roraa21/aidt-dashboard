@@ -940,9 +940,13 @@ function renderApply(){
       plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',font:{size:10,weight:'600'},formatter:v=>v>0?v+'개교':'',color:'#475569'}},
       scales:{x:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:'#f0f0ee'}}}}
   });
-  const eA=avg(rows.filter(d=>d.elem>0).map(d=>d.elem));
-  const mA=avg(rows.filter(d=>d.mid2>0).map(d=>d.mid2));
-  const hA=avg(rows.filter(d=>d.high>0).map(d=>d.high))||Math.max(0,100-eA-mA);
+  // 신청 학교 수 기반 가중 평균으로 학교급별 비율 계산
+  const validRows=rows.filter(d=>d.apply>0&&(d.elem+d.mid2+(d.high||0))>0);
+  const totalApplyW=validRows.reduce((s,d)=>s+d.apply,0);
+  const eA=totalApplyW>0?Math.round(validRows.reduce((s,d)=>s+d.apply*(d.elem||0),0)/totalApplyW):avg(rows.filter(d=>d.elem>0).map(d=>d.elem));
+  const mA=totalApplyW>0?Math.round(validRows.reduce((s,d)=>s+d.apply*(d.mid2||0),0)/totalApplyW):avg(rows.filter(d=>d.mid2>0).map(d=>d.mid2));
+  const hARaw=totalApplyW>0?Math.round(validRows.reduce((s,d)=>s+d.apply*(d.high||0),0)/totalApplyW):0;
+  const hA=hARaw||Math.max(0,100-eA-mA);
   charts.ac2=new Chart(document.getElementById('applyChart2'),{type:'doughnut',
     data:{labels:['초등','중학','고등'],datasets:[{data:[eA,mA,hA],backgroundColor:['#10B981','#3B82C4','#F59E0B'],borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
