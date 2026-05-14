@@ -646,6 +646,8 @@ const SUB_TABS_3MO=[{key:'regular',label:'정기'},{key:'spot',label:'비정기'
 let curPage='process',curApplyTab='all',curUsageTab='all',curMissionTab='all',applySubjectTab='all';
 let charts={},schoolsData=[],usageSchoolsData=[];
 const nv=v=>parseFloat(v)||0;
+const isSubmit=v=>v==='O'||v==='제출'||v==='제출 완료'||v==='제출완료'||v==='완료';
+const isFail=v=>v==='X'||v==='미제출';
 
 function getRows(tab){
   if(tab==='all') return ALL_DATA;
@@ -1618,8 +1620,7 @@ function renderMissionSchools(){
   const tbody=document.getElementById('missionSchoolsBody');
   if(!tbody) return;
 
-  const isSubmit=v=>v==='O'||v==='제출'||v==='제출 완료'||v==='제출완료'||v==='완료';
-  const isFail=v=>v==='X'||v==='미제출';
+
 
   // 서책 제외
   let filtered=schoolsData.filter(d=>d.school&&!d.promo.includes('서책')&&!d.promo.includes('1년무상')&&!d.promo.includes('1년 무상')&&!d.promo.includes('1년 무료')&&!d.promo.includes('무상 지원')&&!d.promo.includes('초등 영어 서책'));
