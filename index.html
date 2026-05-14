@@ -1442,8 +1442,8 @@ function filterSchools(){
     return ms&&(!region||d.region===region)&&(!promo||d.promo===promo)&&(!labelFilter||label===labelFilter);
   });
   const total=filtered.length;
-  const sd=filtered.filter(d=>d.mid_survey==='O'||d.mid_survey==='제출').length;
-  const rd=filtered.filter(d=>d.mid_review==='O'||d.mid_review==='제출').length;
+  const sd=filtered.filter(d=>isSubmit(d.mid_survey)).length;
+  const rd=filtered.filter(d=>isSubmit(d.mid_review)).length;
   document.getElementById('schoolsSummary').innerHTML=
     `<div class="summary-chip"><span style="color:var(--text3)">총 학교</span><span style="font-size:18px;font-weight:700;color:#6366F1;margin-left:8px">${total}개교</span></div>
      <div class="summary-chip"><span style="color:var(--text3)">중간 설문 완료</span><span style="font-size:18px;font-weight:700;color:#10B981;margin-left:8px">${sd}개교</span></div>
@@ -1452,8 +1452,8 @@ function filterSchools(){
   document.getElementById('schoolsBody').innerHTML=filtered.length===0
     ?`<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">검색 결과가 없습니다</td></tr>`
     :filtered.map(d=>{
-      const sb=d.mid_survey==='O'||d.mid_survey==='제출'?`<span class="badge badge-green">제출</span>`:d.mid_survey?`<span class="badge badge-amber">미제출</span>`:`<span style="color:var(--text3)">-</span>`;
-      const rb=d.mid_review==='O'||d.mid_review==='제출'?`<span class="badge badge-green">제출</span>`:d.mid_review?`<span class="badge badge-amber">미제출</span>`:`<span style="color:var(--text3)">-</span>`;
+      const sb=isSubmit(d.mid_survey)?`<span class="badge badge-green">제출</span>`:d.mid_survey?`<span class="badge badge-amber">미제출</span>`:`<span style="color:var(--text3)">-</span>`;
+      const rb=isSubmit(d.mid_review)?`<span class="badge badge-green">제출</span>`:d.mid_review?`<span class="badge badge-amber">미제출</span>`:`<span style="color:var(--text3)">-</span>`;
       const _label=getSchoolLabel(d.region,d.school);
       const focusBadge=_label==='AI중점'?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#FFF3E0;color:#F59E0B;margin-left:4px">AI중점</span>`:'';
       const digitalBadge=_label==='AI선도'?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#EDE7F6;color:#7C3AED;margin-left:4px">AI선도</span>`:'';
@@ -1637,8 +1637,8 @@ function renderMissionSchools(){
     const cardHtml=rounds.map((r,i)=>{
       const rData=allFiltered.filter(d=>d.round===r);
       const total=rData.length;
-      const survey=rData.filter(d=>d.mid_survey==='O'||d.mid_survey==='제출').length;
-      const review=rData.filter(d=>d.mid_review==='O'||d.mid_review==='제출').length;
+      const survey=rData.filter(d=>isSubmit(d.mid_survey)).length;
+      const review=rData.filter(d=>isSubmit(d.mid_review)).length;
       const c=colors[i%colors.length];
       const sp=total>0?Math.round(survey/total*100):0;
       const rp=total>0?Math.round(review/total*100):0;
