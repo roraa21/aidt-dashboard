@@ -1186,7 +1186,7 @@ function renderUsageTable(){
   renderUsageCharts(filtered);
 
   // 접속시간 분으로 변환 함수
-  const toMin=t=>{if(!t)return 0;const p=t.split(':');return parseInt(p[0]||0)*60+parseInt(p[1]||0);};
+  const toMin=t=>{if(!t)return 0;const p=t.split(':');const h=parseInt(p[0])||0;const m=parseInt(p[1])||0;return isNaN(h)||isNaN(m)?0:h*60+m;};
 
   // 접속시간/스스로학습 차트
   const row2=document.getElementById('usageChartsRow2');
@@ -1225,7 +1225,7 @@ function renderUsageTable(){
   const totalSchools=new Set(filtered.map(d=>d.school)).size;
   const totalStudyGen=filtered.reduce((s,d)=>s+(d.study_gen||0),0);
   const totalMinutes=filtered.reduce((s,d)=>s+toMin(d.access_time),0);
-  const avgMin=totalSchools?Math.round(totalMinutes/totalSchools):0;
+  const avgMin=totalSchools&&totalMinutes?Math.round(totalMinutes/totalSchools):0;
   const kpiEl=document.getElementById('usageKpiNew');
   if(kpiEl) kpiEl.innerHTML=
     '<div class="kpi"><div class="kpi-label">접속 학교 수</div><div class="kpi-val" style="color:#6366F1">'+totalSchools+'<span style="font-size:14px">개교</span></div><div class="kpi-sub">실제 사용 학교</div></div>'+
