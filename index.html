@@ -581,18 +581,19 @@ const AI_SEONDO=[["대구", "경북대학교사범대학부설초등학교"], ["
 
 function getSchoolLabel(region, school){
   if(!school) return '';
-  const regionMap={'서울':'서울','부산':'부산','대구':'대구','인천':'인천','광주':'광주','대전':'대전',
-    '울산':'울산','세종':'세종','경기':'경기','강원':'강원','충북':'충북','충남':'충남',
-    '전북':'전북','전남':'전남','경북':'경북','경남':'경남','제주':'제주'};
-  const r=Object.keys(regionMap).find(k=>region.includes(k))||region;
-  if(AI_JUNGJEOM.some(([edu,name])=>{
-    const e=Object.keys(regionMap).find(k=>edu.includes(k))||edu;
-    return e===r&&name===school.trim();
-  })) return 'AI중점';
-  if(AI_SEONDO.some(([edu,name])=>{
-    const e=Object.keys(regionMap).find(k=>edu.includes(k))||edu;
-    return e===r&&name===school.trim();
-  })) return 'AI선도';
+  const s=school.trim();
+  // 지역 정규화 - 단축명 추출
+  const regionKeys=['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'];
+  const normalizeRegion=r=>{if(!r)return '';const k=regionKeys.find(k=>r.includes(k));return k||r;};
+  const r=normalizeRegion(region);
+  // 지역+학교명 매칭 우선, 없으면 학교명만 매칭
+  const matchJung=AI_JUNGJEOM.some(([edu,name])=>normalizeRegion(edu)===r&&name===s);
+  const matchSeondo=AI_SEONDO.some(([edu,name])=>normalizeRegion(edu)===r&&name===s);
+  if(matchJung) return 'AI중점';
+  if(matchSeondo) return 'AI선도';
+  // 지역 매칭 실패 시 학교명만으로 재시도 (목록에 지역이 잘못 등록된 경우 대비)
+  if(AI_JUNGJEOM.some(([,name])=>name===s)) return 'AI중점';
+  if(AI_SEONDO.some(([,name])=>name===s)) return 'AI선도';
   return '';
 }
 
