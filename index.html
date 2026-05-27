@@ -1639,9 +1639,10 @@ function renderMissionSchools(){
     const colors=['#6366F1','#818CF8','#0EA5E9','#10B981','#F59E0B'];
     const cardHtml=rounds.map((r,i)=>{
       const rData=allFiltered.filter(d=>d.round===r);
-      const total=rData.length;
-      const survey=rData.filter(d=>isSubmit(d.mid_survey)).length;
-      const review=rData.filter(d=>isSubmit(d.mid_review)).length;
+      const uniqueRData=[...new Map(rData.map(d=>[d.region+'_'+d.school,d])).values()];
+      const total=uniqueRData.length;
+      const survey=uniqueRData.filter(d=>isSubmit(d.mid_survey)).length;
+      const review=uniqueRData.filter(d=>isSubmit(d.mid_review)).length;
       const c=colors[i%colors.length];
       const sp=total>0?Math.round(survey/total*100):0;
       const rp=total>0?Math.round(review/total*100):0;
@@ -1667,9 +1668,11 @@ function renderMissionSchools(){
     return;
   }
 
-  const surveyDone=filtered.filter(d=>isSubmit(d.mid_survey)).length;
-  const reviewDone=filtered.filter(d=>isSubmit(d.mid_review)).length;
-  const total=filtered.length;
+  // 학교명 기준 중복 제거
+  const uniqueFilteredSchools=[...new Map(filtered.map(d=>[d.region+'_'+d.school,d])).values()];
+  const total=uniqueFilteredSchools.length;
+  const surveyDone=uniqueFilteredSchools.filter(d=>isSubmit(d.mid_survey)).length;
+  const reviewDone=uniqueFilteredSchools.filter(d=>isSubmit(d.mid_review)).length;
 
   const summary=document.getElementById('missionSchoolsSummary');
   if(summary) summary.innerHTML=
